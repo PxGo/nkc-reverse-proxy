@@ -1,0 +1,30 @@
+{
+  "ports": {
+    "httpPort": 80,
+    "httpsPort": 443
+  },
+  "timeout": 10000,
+  "servers": [
+    {
+      "name": "故园怀旧",
+      "type": "forward",
+      "hostname": [
+        "localhost",
+        "192.168.11.36"
+      ],
+      "https": true,
+      "httpTarget": [
+        "http://127.0.0.1:9000"
+      ],
+      "wsTarget": [
+        "http://127.0.0.1:2170",
+        "http://127.0.0.1:2171"
+      ]
+    }
+  ],
+  "noResponsePage": "path/to/html",
+  "SSL": {
+    "cert": "path/to/cert",
+    "key": "path/to/key"
+  }
+}

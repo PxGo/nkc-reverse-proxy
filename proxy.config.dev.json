@@ -1,0 +1,37 @@
+{
+  "ports": {
+    "httpPort": 80,
+    "httpsPort": 443
+  },
+  "timeout": 10000,
+  "servers": [
+    {
+      "name": "故园怀旧",
+      "type": "proxy",
+      "hostname": [
+        "127.0.0.1"
+      ],
+      "https": true,
+      "httpTarget": [
+        "http://127.0.0.1:9000"
+      ],
+      "wsTarget": [
+        "http://127.0.0.1:9000",
+        "http://127.0.0.1:9000",
+        "http://127.0.0.1:9000"
+      ]
+    },
+    {
+      "name": "故园怀旧 重定向",
+      "type": "redirect",
+      "hostname": [
+        "localhost"
+      ],
+      "https": false,
+      "httpTarget": [
+        "https://www.kechuang.org"
+      ]
+    }
+  ],
+  "noResponsePage": "D:/zlp/nkc-proxy-go-pure/assets/html/503.html"
+}
