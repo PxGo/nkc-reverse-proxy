@@ -1,7 +1,9 @@
 package proxy
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 
@@ -27,6 +29,7 @@ func (p *NKCProxy) Launch() {
 		p.ServerTLS.ListenAndServeTLS("", "")
 		ws.Done()
 	}()
+	fmt.Printf("proxy process id: %s \n", strconv.Itoa(os.Getpid()))
 	ws.Wait()
 }
 
@@ -36,4 +39,9 @@ func NewNKCProxy(conf config.Profile) *NKCProxy {
 	proxy.Server = NewServer(conf)
 	proxy.ServerTLS = NewServer(conf)
 	return proxy
+}
+
+func init() {
+	http.DefaultTransport.(*http.Transport).MaxIdleConns = 1000
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 1000
 }
