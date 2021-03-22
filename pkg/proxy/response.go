@@ -2,14 +2,11 @@ package proxy
 
 import (
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 
 	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/balance"
 	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/config"
 )
-
-var ReverseProxyCaches = make(map[string]*httputil.ReverseProxy)
 
 func responseWebSocket(conf config.Server, rw http.ResponseWriter, req *http.Request) {
 	balancer := balance.NewIPKeyBalancer()
@@ -17,14 +14,11 @@ func responseWebSocket(conf config.Server, rw http.ResponseWriter, req *http.Req
 	hostname := getHostname(req)
 	targetHost := balancer.Get(hostname)
 	// 转发
-	var proxy *httputil.ReverseProxy
-	if ReverseProxyCaches[targetHost] != nil {
-		proxy = ReverseProxyCaches[targetHost]
-	} else {
-		remote, _ := url.Parse(targetHost)
-		proxy = httputil.NewSingleHostReverseProxy(remote)
-		ReverseProxyCaches[targetHost] = proxy
-	}
+	remote, _ := url.Parse(targetHost)
+	req.URL.Scheme = remote.Scheme
+	req.URL.Host = remote.Host
+	req.Host = remote.Host
+	proxy := GetReverseProxyer(targetHost)
 	proxy.ServeHTTP(rw, req)
 }
 
@@ -38,17 +32,11 @@ func responseHTTP(conf config.Server, rw http.ResponseWriter, req *http.Request)
 		return
 	}
 	// 否则就是转发
-	remote, _ := url.Parse(targetHost)
-	var proxy *httputil.ReverseProxy
-	if ReverseProxyCaches[targetHost] != nil {
-		proxy = ReverseProxyCaches[targetHost]
-		proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, e error) {
-			responseError(conf, rw, req)
-		}
-	} else {
-		proxy = httputil.NewSingleHostReverseProxy(remote)
-		ReverseProxyCaches[targetHost] = proxy
+	proxy := GetReverseProxyer(targetHost)
+	proxy.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, e error) {
+		responseError(conf, rw, req)
 	}
+	remote, _ := url.Parse(targetHost)
 	req.URL.Scheme = remote.Scheme
 	req.URL.Host = remote.Host
 	req.Host = remote.Host

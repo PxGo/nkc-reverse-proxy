@@ -4,9 +4,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"runtime/debug"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/config"
@@ -69,29 +70,19 @@ func NewServer(conf config.Profile) *http.Server {
 	}
 }
 
-// 开了个协程去监听端口
-func Listen(server *http.Server) {
-	ws := sync.WaitGroup{}
-	ws.Add(1)
-	go func() {
-		err := server.ListenAndServe()
-		if err != nil {
-			fmt.Println(err)
-		}
-		ws.Done()
-	}()
-	ws.Wait()
-}
+// golang内置反向代理handle实例的缓存
+var ReverseProxyCaches = make(map[string]*httputil.ReverseProxy)
 
-func ListenTLS(server *http.Server) {
-	ws := sync.WaitGroup{}
-	ws.Add(1)
-	go func() {
-		err := server.ListenAndServeTLS("", "")
-		if err != nil {
-			fmt.Println(err)
-		}
-		ws.Done()
-	}()
-	ws.Wait()
+// 获取反向代理handle实例
+func GetReverseProxyer(host string) *httputil.ReverseProxy {
+	if ReverseProxyCaches[host] != nil {
+		return ReverseProxyCaches[host]
+	} else {
+		remote, _ := url.Parse(host)
+		proxy := httputil.NewSingleHostReverseProxy(remote)
+		defer func() {
+			ReverseProxyCaches[host] = proxy
+		}()
+		return proxy
+	}
 }
