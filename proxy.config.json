@@ -24,8 +24,8 @@
         "http://localhost:2172"
       ],
       "SSL": {
-        "cert": "D:/zlp/nkc-proxy-go-pure/assets/cert/www.kechuang.org.crt",
-        "key": "D:/zlp/nkc-proxy-go-pure/assets/cert/www.kechuang.org.key"
+        "cert": "assets/cert/www.gyhj.org.crt",
+        "key": "assets/cert/www.gyhj.org.key"
       }
     },
     {
@@ -42,10 +42,10 @@
       ]
     }
   ],
-  "noResponsePage": "D:/zlp/nkc-proxy-go-pure/assets/html/503.html",
+  "noResponsePage": "assets/html/503.html",
   "SSL": {
-    "cert": "D:/zlp/nkc-proxy-go-pure/assets/cert/default.crt",
-    "key": "D:/zlp/nkc-proxy-go-pure/assets/cert/default.key"
+    "cert": "assets/cert/default.crt",
+    "key": "assets/cert/default.key"
   },
   "concurrentLimit": 0
 }

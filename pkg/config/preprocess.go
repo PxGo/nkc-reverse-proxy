@@ -15,7 +15,7 @@ func preprocess(conf *Profile) {
 func set_NoResponsePage(conf *Profile) {
 	for i, serve := range conf.Servers {
 		if serve.NoResponsePage == "" {
-			conf.Servers[i].NoResponsePage = conf.NoResponsePage
+			conf.Servers[i].NoResponsePage = GetAbsPath(conf.NoResponsePage)
 		}
 	}
 }
@@ -51,7 +51,7 @@ func cacheSSLCertificate(certFile string, keyFile string) {
 	if CertificateCaches[certFile] != nil {
 		return
 	}
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	cert, err := tls.LoadX509KeyPair(GetAbsPath(certFile), GetAbsPath(keyFile))
 	if err != nil {
 		fmt.Println("读取SSL证书文件失败")
 		panic(err)
