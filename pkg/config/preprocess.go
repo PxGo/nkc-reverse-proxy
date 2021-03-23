@@ -13,9 +13,17 @@ func preprocess(conf *Profile) {
 
 // 检查局部NoResponsePage配置缺省，填充全局NoResponsePage配置
 func set_NoResponsePage(conf *Profile) {
+	globalNoResponsePage := GetAbsPath(conf.NoResponsePage)
+	if !PathExist(globalNoResponsePage) {
+		log.Fatalf("全局配置项NoResponsePage的值 %s 不是一个文件路径", globalNoResponsePage)
+	}
 	for i, serve := range conf.Servers {
 		if serve.NoResponsePage == "" {
 			conf.Servers[i].NoResponsePage = GetAbsPath(conf.NoResponsePage)
+		} else {
+			if !PathExist(serve.NoResponsePage) {
+				log.Fatalf("%s配置项NoResponsePage的值 %s 不是一个文件", serve.Name, serve.NoResponsePage)
+			}
 		}
 	}
 }
