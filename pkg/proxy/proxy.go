@@ -20,17 +20,21 @@ func (p *NKCProxy) Launch() {
 	ws := sync.WaitGroup{}
 	p.ServerTLS.Addr = ":" + strconv.FormatInt(p.Config.Ports.HttpsPort, 10)
 	p.Server.Addr = ":" + strconv.FormatInt(p.Config.Ports.HttpPort, 10)
+	var err error
 	ws.Add(2)
 	go func() {
-		p.Server.ListenAndServe()
+		err = p.Server.ListenAndServe()
 		ws.Done()
 	}()
 	go func() {
-		p.ServerTLS.ListenAndServeTLS("", "")
+		err = p.ServerTLS.ListenAndServeTLS("", "")
 		ws.Done()
 	}()
 	fmt.Printf("proxy process id: %s \n", strconv.Itoa(os.Getpid()))
 	ws.Wait()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 func NewNKCProxy(conf config.Profile) *NKCProxy {
