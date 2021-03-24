@@ -21,7 +21,7 @@ go run main.go path/to/config.json
 |node version   | 7.46s     | 35.49s   | 71.03s    |
 |golang version | 5.88s     | 19.28s   | 38.06s    |
 
-golang版本http请求处理效率相较于node提升为 21% 到 46%
+golang版本的代理http请求处理效率相较于node版本提升为 21% 到 46%
 
 测试代码
 
