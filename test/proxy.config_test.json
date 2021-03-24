@@ -3,7 +3,6 @@
     "httpPort": 80,
     "httpsPort": 443
   },
-  "timeout": 10000,
   "servers": [
     {
       "name": "故园怀旧",
@@ -22,9 +21,9 @@
       ]
     }
   ],
-  "noResponsePage": "path/to/html",
+  "noResponsePage": "../assets/html/503.html",
   "SSL": {
-    "cert": "path/to/cert",
-    "key": "path/to/key"
+    "cert": "../assets/cert/default.crt",
+    "key": "../assets/cert/default.key"
   }
 }

@@ -14,7 +14,6 @@ func TestParse(t *testing.T) {
 			HttpPort:  80,
 			HttpsPort: 443,
 		},
-		Timeout: 10000,
 		Servers: []config.Server{
 			{
 				Name:       "故园怀旧",
@@ -24,18 +23,18 @@ func TestParse(t *testing.T) {
 				HttpTarget: []string{"http://127.0.0.1:9000"},
 				WsTarget:   []string{"http://127.0.0.1:2170", "http://127.0.0.1:2171"},
 				// generate by preprocess
-				NoResponsePage: "path/to/html",
+				NoResponsePage: "D:\\zlp\\nkc-proxy-go-pure\\assets\\html\\503.html",
 				// generate by preprocess
 				SSL: config.SSL{
-					Cert: "path/to/cert",
-					Key:  "path/to/key",
+					Cert: "../assets/cert/default.crt",
+					Key:  "../assets/cert/default.key",
 				},
 			},
 		},
-		NoResponsePage: "path/to/html",
+		NoResponsePage: "../assets/html/503.html",
 		SSL: config.SSL{
-			Cert: "path/to/cert",
-			Key:  "path/to/key",
+			Cert: "../assets/cert/default.crt",
+			Key:  "../assets/cert/default.key",
 		},
 	}
 
