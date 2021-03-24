@@ -2,13 +2,13 @@ package proxy
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"runtime/debug"
 	"strconv"
-	"time"
 
 	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/config"
 )
@@ -20,9 +20,11 @@ func NewServer(conf config.Profile) *http.Server {
 		serveMux   = http.NewServeMux()
 		concurrent = NewConcurrentLimit(conf.ConcurrentLimit)
 	)
-	// cert, _ := tls.LoadX509KeyPair(`D:\zlp\nkc-proxy-go-pure\assets\cert\www.kechuang.org.crt`, `D:\zlp\nkc-proxy-go-pure\assets\cert\www.kechuang.org.key`)
 	tlsConfig.GetCertificate = func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
 		serveConf, _ := getServerConfig(conf, getHostnameFromTLSHelloInfo(chi))
+		if !serveConf.Https {
+			return nil, errors.New("configuar https is disabled")
+		}
 		cert, err := config.GetCertificate(serveConf.SSL.Cert)
 		if err != nil {
 			fmt.Printf("%s\n%s\n", err.Error(), debug.Stack())
@@ -63,10 +65,10 @@ func NewServer(conf config.Profile) *http.Server {
 	})
 
 	return &http.Server{
-		Addr:         ":" + strconv.FormatInt(conf.Ports.HttpPort, 10),
-		Handler:      serveMux,
-		WriteTimeout: time.Duration(conf.Timeout * int64(time.Millisecond)),
-		TLSConfig:    tlsConfig,
+		Addr:        ":" + strconv.FormatInt(conf.Ports.HttpPort, 10),
+		Handler:     serveMux,
+		TLSConfig:   tlsConfig,
+		IdleTimeout: 0,
 	}
 }
 

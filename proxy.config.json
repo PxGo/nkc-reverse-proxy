@@ -3,7 +3,6 @@
     "httpPort": 80,
     "httpsPort": 443
   },
-  "timeout": 10000,
   "servers": [
     {
       "name": "故园怀旧",

@@ -18,7 +18,6 @@ type Ports struct {
 
 type Profile struct {
 	Ports           Ports    `json:"ports"`
-	Timeout         int64    `json:"timeout"`
 	Servers         []Server `json:"servers"`
 	NoResponsePage  string   `json:"noResponsePage"`
 	SSL             SSL      `json:"SSL"`
