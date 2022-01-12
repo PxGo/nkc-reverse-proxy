@@ -1,6 +1,2 @@
-assets/cert/default.crt
-assets/cert/default.key
-assets/cert/www.gyhj.org.crt
-assets/cert/www.gyhj.org.key
-assets/cert/www.kechuang.org.crt
-assets/cert/www.kechuang.org.key
+.idea
+.vscode

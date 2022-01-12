@@ -1,4 +1,4 @@
-package main
+/*package main
 
 import (
 	"fmt"
@@ -14,6 +14,45 @@ func main() {
 	}
 	configFile := os.Args[1]
 	conf := config.Parse(configFile)
+	fmt.Println(conf)
 	serve := proxy.NewNKCProxy(conf)
 	serve.Launch()
+}
+*/
+
+package main
+
+import (
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/http/httputil"
+)
+
+func homeHandle(w http.ResponseWriter, r *http.Request) {
+	_, err := io.WriteString(w, "hello, world")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+}
+
+func newReverseProxy() *httputil.ReverseProxy {
+	director := func(req *http.Request) {
+		req.URL.Scheme = "http"
+		req.URL.Host = "localhost:9000"
+		//req.URL.Path = req
+	}
+	return &httputil.ReverseProxy{
+		Director: director,
+	}
+}
+
+func main() {
+	proxy := newReverseProxy()
+	go func() {
+		log.Fatal(http.ListenAndServe(":8080", proxy))
+	}()
+	log.Fatal(http.ListenAndServe(":9090", proxy))
 }
