@@ -1,42 +1,13 @@
-/*package main
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/config"
-	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/proxy"
-)
-
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Error: 请在命令行参数中加入配置文件路径")
-	}
-	configFile := os.Args[1]
-	conf := config.Parse(configFile)
-	fmt.Println(conf)
-	serve := proxy.NewNKCProxy(conf)
-	serve.Launch()
-}
-*/
-
 package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"nkc-proxy/pkg/tools"
+	"strconv"
 )
-
-func homeHandle(w http.ResponseWriter, r *http.Request) {
-	_, err := io.WriteString(w, "hello, world")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-}
 
 func newReverseProxy() *httputil.ReverseProxy {
 	director := func(req *http.Request) {
@@ -49,10 +20,30 @@ func newReverseProxy() *httputil.ReverseProxy {
 	}
 }
 
+func CreateServer(proxyServer *httputil.ReverseProxy, port int64, SSLKey string, SSLCert string) {
+	hasSSL := SSLKey != "" && SSLCert != ""
+	portString := ":" + strconv.FormatInt(port, 10)
+	if hasSSL {
+		log.Fatal(http.ListenAndServeTLS(portString, SSLCert, SSLKey, proxyServer))
+	} else {
+		log.Fatal(http.ListenAndServe(portString, proxyServer))
+	}
+}
+
 func main() {
+	serversPort, err := tools.GetPortFromConfigs()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	proxy := newReverseProxy()
 	go func() {
-		log.Fatal(http.ListenAndServe(":8080", proxy))
+		for index, serverPort := range serversPort {
+			if index == 0 {
+				continue
+			}
+			log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(serverPort, 10), proxy))
+		}
 	}()
-	log.Fatal(http.ListenAndServe(":9090", proxy))
+	log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(serversPort[0], 10), proxy))
 }

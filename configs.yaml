@@ -1,0 +1,31 @@
+transport:
+  keepAlive: true
+  maxIdleConnections: 1000
+  maxIdleConnectionsPerHost: 100
+  maxConnectionsPerHost: 1000
+
+servers:
+  -
+    id: "nkc"
+    listen: 90
+    name:
+      - www.kechuang.org
+    SSLKey: ""
+    SSLCert: ""
+    WEBPass:
+      - http://127.0.0.1:1090
+      - http://127.0.0.1:1091
+    WSPass:
+      - http://127.0.0.1:1090
+      - http://127.0.0.1:1091
+    WEBType: "random"
+    WSType: "ipHash"
+
+  -
+    id: "nkcRedirect"
+    listen: 80
+    name:
+      - www.kechuang.org
+      - kechuang.org
+    redirectCode: 301
+    redirectUrl: "https://www.kechuang.org"
