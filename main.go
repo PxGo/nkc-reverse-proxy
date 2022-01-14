@@ -2,48 +2,28 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"net/http/httputil"
-	"nkc-proxy/pkg/tools"
-	"strconv"
+	"nkc-proxy/tools"
 )
 
-func newReverseProxy() *httputil.ReverseProxy {
-	director := func(req *http.Request) {
-		req.URL.Scheme = "http"
-		req.URL.Host = "localhost:9000"
-		//req.URL.Path = req
-	}
-	return &httputil.ReverseProxy{
-		Director: director,
-	}
-}
-
-func CreateServer(proxyServer *httputil.ReverseProxy, port int64, SSLKey string, SSLCert string) {
-	hasSSL := SSLKey != "" && SSLCert != ""
-	portString := ":" + strconv.FormatInt(port, 10)
-	if hasSSL {
-		log.Fatal(http.ListenAndServeTLS(portString, SSLCert, SSLKey, proxyServer))
-	} else {
-		log.Fatal(http.ListenAndServe(portString, proxyServer))
-	}
-}
-
 func main() {
-	serversPort, err := tools.GetPortFromConfigs()
+	serversPort, err := tools.GetServersPortFromConfigs()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	proxy := newReverseProxy()
-	go func() {
-		for index, serverPort := range serversPort {
-			if index == 0 {
-				continue
+	messages := make(chan string)
+	ports := []int64{}
+	for port, serverPort := range serversPort {
+		ports = append(ports, port)
+		go func(sp *tools.ServerPort) {
+			_, err := tools.CreateServerAndStart(sp.Port, sp.TLSConfig)
+			if err != nil {
+				fmt.Printf("创建服务出错")
+				fmt.Printf(err.Error())
+				return
 			}
-			log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(serverPort, 10), proxy))
-		}
-	}()
-	log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(serversPort[0], 10), proxy))
+		}(serverPort)
+	}
+	fmt.Printf("server is running at %v", ports)
+	<-messages
 }

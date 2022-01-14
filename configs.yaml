@@ -7,17 +7,17 @@ transport:
 servers:
   -
     id: "nkc"
-    listen: 90
+    listen: 444
     name:
+      - kechuang.org
       - www.kechuang.org
-    SSLKey: ""
-    SSLCert: ""
+      - it.kechuang.org
+    SSLKey: "d:/temp/TLS/www.kechuang.org.key"
+    SSLCert: "d:/temp/TLS/www.kechuang.org.crt"
     WEBPass:
-      - http://127.0.0.1:1090
-      - http://127.0.0.1:1091
+      - http://127.0.0.1:9000
     WSPass:
-      - http://127.0.0.1:1090
-      - http://127.0.0.1:1091
+      - http://127.0.0.1:9000
     WEBType: "random"
     WSType: "ipHash"
 
