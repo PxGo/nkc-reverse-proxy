@@ -268,13 +268,16 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 		passType = proxyPass.WEBType
 	}
 
-	ip := GetClientIP(req)
+	var urlInfo *url.URL
 
-	targetUrlString := GetUrlByPassType(pass, passType, ip)
-
-	urlInfo, err := url.Parse(targetUrlString)
-	if err != nil {
-		return nil, nil, err
+	if len(pass) > 0 {
+		ip := GetClientIP(req)
+		targetUrlString := GetUrlByPassType(pass, passType, ip)
+		var err error
+		urlInfo, err = url.Parse(targetUrlString)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return urlInfo, &proxyPass.Redirect, nil
@@ -314,6 +317,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	// 获取配置文件
 	passUrl, redirectInfo, err := GetTargetPassInfo(request, handle.IsHTTPS)
 	if err != nil {
+		fmt.Printf(err.Error())
 		_, err := io.WriteString(writer, err.Error())
 		if err != nil {
 			fmt.Printf(err.Error())
@@ -322,17 +326,11 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 	if redirectInfo != nil && redirectInfo.Url != "" {
-		writer.WriteHeader(redirectInfo.Code)
-		writer.Header().Set("location", redirectInfo.Url+request.URL.Path)
-	} else if passUrl == nil {
-		_, err := io.WriteString(writer, "不存在配置")
-		if err != nil {
-			fmt.Printf(err.Error())
-			return
-		}
-		return
-	} else {
+		http.Redirect(writer, request, redirectInfo.Url, redirectInfo.Code)
+	} else if passUrl != nil {
 		handle.ReverseProxy.ServeHTTP(writer, request)
+	} else {
+		writer.WriteHeader(http.StatusNotFound)
 	}
 }
 

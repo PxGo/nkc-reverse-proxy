@@ -9,11 +9,9 @@ servers:
     id: "nkc"
     listen: 444
     name:
-      - kechuang.org
-      - www.kechuang.org
-      - it.kechuang.org
-    SSLKey: "d:/temp/TLS/www.kechuang.org.key"
-    SSLCert: "d:/temp/TLS/www.kechuang.org.crt"
+      - www.0x0002.com
+    SSLKey: "d:/Temp/SSL/www.0x0002.com.key"
+    SSLCert: "d:/Temp/SSL/www.0x0002.com.crt"
     WEBPass:
       - http://127.0.0.1:9000
     WSPass:
@@ -23,9 +21,9 @@ servers:
 
   -
     id: "nkcRedirect"
-    listen: 80
+    listen: 90
     name:
-      - www.kechuang.org
-      - kechuang.org
+      - www.0x0002.com
+      - 0x0002.com
     redirectCode: 301
-    redirectUrl: "https://www.kechuang.org"
+    redirectUrl: "https://www.0x0002.com:444"
