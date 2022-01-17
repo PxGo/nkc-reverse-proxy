@@ -1,0 +1,52 @@
+errorlog: "/log/error.txt"
+transport:
+  # 建立 tcp 超时时间 秒
+  timeout: 30
+  #是否开启 keepAlive
+  keepAlive: true
+  # keepAlive 心跳间隔时间 秒
+  keepAliveTimeout: 30
+  # 空闲 tcp 等待时间 秒
+  idleConnectionTimeout: 90
+  # 最大空闲 tcp 链接数
+  maxIdleConnections: 1000
+  # 每个 host 允许的最大空闲 tcp 链接数
+  maxIdleConnectionsPerHost: 100
+  # 每个 host 允许的最大 tcp 链接数
+  maxConnectionsPerHost: 1000
+
+servers:
+  -
+    # 名称
+    id: "nkc"
+    # 暴露的端口
+    listen: 443
+    #接受的域名
+    name:
+      - www.kechuang.org
+    # ssl 证书 https 必须指定证书文件
+    SSLKey: "/ssl/www.kechuang.org.key"
+    # 同上
+    SSLCert: "/ssl/www.kechuang.org.crt"
+    # web 反向代理目标服务
+    WEBPass:
+      - http://127.0.0.1:9000
+    # websocket 反向代理目标服务，默认从 WEBPass 获取
+    WSPass:
+      - http://127.0.0.1:9000
+    # web 反向代理负载均衡方式 random, ipHash
+    WEBType: "random"
+    # websocket 反向代理负载均衡方式 random, ipHash
+    WSType: "ipHash"
+
+  -
+    id: "nkc redirect"
+    listen: 80
+    name:
+      - www.kechuang.org
+      - kechuang.org
+      - bbs.kechuang.org
+    # 重定向状态码
+    redirectCode: 301
+    # 重定向目标链接
+    redirectUrl: "https://www.kechuang.org"
