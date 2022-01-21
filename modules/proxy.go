@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -21,8 +20,6 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 		return nil, err
 	}
 	transportConfig := configs.Transport
-
-	fmt.Println(transportConfig, "\n")
 
 	transport := &http.Transport{
 		Proxy:             http.ProxyFromEnvironment,
