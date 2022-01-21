@@ -14,7 +14,7 @@ type NKCHandle struct {
 type Transport struct {
 	KeepAlive                 bool          `yaml:"keeplive"`
 	MaxIdleConnections        int           `yaml:"maxIdleConnections"`
-	MaxIdleConnectionsPerHost int           `yaml:"MaxIdleConnectionsPerHost"`
+	MaxIdleConnectionsPerHost int           `yaml:"maxIdleConnectionsPerHost"`
 	MaxConnectionsPerHost     int           `yaml:"maxConnectionsPerHost"`
 	Timeout                   time.Duration `yaml:"timeout"`
 	KeepAliveTimeout          time.Duration `yaml:"keepAliveTimeout"`

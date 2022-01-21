@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 )
 
@@ -32,15 +33,11 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func CreateServerAndStart(port int64, cfg *tls.Config) (*http.Server, error) {
+func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port int64, cfg *tls.Config) (*http.Server, error) {
 	portString := ":" + strconv.FormatInt(port, 10)
 	isHttps := false
 	if cfg != nil {
 		isHttps = true
-	}
-	reverseProxy, err := GetReverseProxy(isHttps)
-	if err != nil {
-		return nil, err
 	}
 	server := http.Server{
 		Addr: portString,
