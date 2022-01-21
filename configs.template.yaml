@@ -1,5 +1,5 @@
 pprof: 5050
-errorlog: "/log/error.txt"
+errorLog: "/log/error.txt"
 transport:
   # 建立 tcp 超时时间 秒
   timeout: 30
