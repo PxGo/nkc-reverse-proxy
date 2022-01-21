@@ -6,9 +6,24 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"nkc-proxy/modules"
+	"strconv"
 )
 
 func main() {
+	configs, err := modules.GetConfigs()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if configs.PProf != 0 {
+		go func() {
+			// pprof 调试
+			fmt.Printf("pprof: localhost:%v/debug/pprof\n", configs.PProf)
+			log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(configs.PProf, 10), nil))
+		}()
+	}
+
 	serversPort, err := modules.GetServersPortFromConfigs()
 	if err != nil {
 		fmt.Println(err)
@@ -25,10 +40,7 @@ func main() {
 			}
 		}(serverPort)
 	}
-	go func() {
-		// pprof 调试
-		log.Fatal(http.ListenAndServe(":6060", nil))
-	}()
+
 	fmt.Printf("server is running at %v\n", ports)
 	select {}
 }

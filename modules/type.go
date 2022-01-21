@@ -39,6 +39,7 @@ type Configs struct {
 	Transport Transport `yaml:"transport"`
 	Servers   []Server  `yaml:"servers"`
 	ErrorLog  string    `yaml:"errorLog"`
+	PProf     int64     `yaml:"pprof"`
 }
 
 type ServerPort struct {

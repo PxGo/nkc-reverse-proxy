@@ -1,3 +1,4 @@
+pprof: 5050
 errorlog: "/log/error.txt"
 transport:
   # 建立 tcp 超时时间 秒
