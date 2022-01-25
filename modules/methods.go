@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/dgryski/go-farm"
 	"github.com/go-yaml/yaml"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -20,13 +21,14 @@ var proxyPassMap map[uint16]map[string]*ProxyPass
 var httpReverseProxy *httputil.ReverseProxy
 var httpsReverseProxy *httputil.ReverseProxy
 
-func GetConfigsPath() (string, error) {
+func GetConfigsPath() (string, string, error) {
 	root, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	filePath := path.Join(root, "configs.yaml")
-	return filePath, nil
+	templateFilePath := path.Join(root, "configs.template.yaml")
+	return filePath, templateFilePath, nil
 }
 
 func GetErrorLogPath() (string, error) {
@@ -39,13 +41,28 @@ func GetErrorLogPath() (string, error) {
 }
 
 func GetConfigs() (*Configs, error) {
-	configFilePath, err := GetConfigsPath()
+	configFilePath, templateConfigFilePath, err := GetConfigsPath()
 	if err != nil {
 		return nil, err
 	}
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			templateFile, err := ioutil.ReadFile(templateConfigFilePath)
+			if err != nil {
+				return nil, err
+			}
+			err = ioutil.WriteFile(configFilePath, templateFile, 0644)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+		file, err = os.ReadFile(configFilePath)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var configs Configs
 	err = yaml.Unmarshal(file, &configs)
