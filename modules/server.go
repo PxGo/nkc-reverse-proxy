@@ -11,23 +11,25 @@ import (
 func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	passUrl, redirectInfo, err := GetTargetPassInfo(request, handle.IsHTTPS)
 	if err != nil {
-		ErrorLogger.Println(err)
+		AddErrorLog(err)
 		return
 	}
 	if redirectInfo != nil && redirectInfo.Url != "" {
+		AddAccessLog(request.Host, request.URL, "Redirect", redirectInfo.Code, redirectInfo.Url)
 		http.Redirect(writer, request, redirectInfo.Url, redirectInfo.Code)
 	} else if passUrl != nil {
 		handle.ReverseProxy.ServeHTTP(writer, request)
 	} else {
+		AddAccessLog(request.Host, request.URL, "NotFound")
 		pageContent, err := GetPageByStatus(http.StatusNotFound)
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			return
 		}
 		writer.WriteHeader(http.StatusNotFound)
 		_, err = writer.Write(pageContent)
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			return
 		}
 	}
@@ -50,13 +52,13 @@ func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg 
 		server.TLSConfig = cfg
 		err := server.ListenAndServeTLS("", "")
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			log.Fatal(err)
 		}
 	} else {
 		err := server.ListenAndServe()
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			log.Fatal(err)
 		}
 	}
