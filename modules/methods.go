@@ -134,26 +134,26 @@ func GetProxyPassMap() (map[uint16]map[string]*ProxyPass, error) {
 		}
 		for _, name := range server.Name {
 			if proxyPass[server.Listen][name] == nil {
-				var wsPass []string
-				var wsType string
-				if len(server.WSPass) > 0 {
-					wsPass = server.WSPass
+				var SocketIoPass []string
+				var SocketIoBalance string
+				if len(server.SocketIoPass) > 0 {
+					SocketIoPass = server.SocketIoPass
 				} else {
-					wsPass = server.WEBPass
+					SocketIoPass = server.Pass
 				}
-				if server.WSType == "" {
-					wsType = server.WEBType
+				if server.SocketIoBalance == "" {
+					SocketIoBalance = server.balance
 				} else {
-					wsType = server.WSType
+					SocketIoBalance = server.SocketIoBalance
 				}
-				if server.RedirectUrl == "" && len(server.WEBPass) == 0 {
+				if server.RedirectUrl == "" && len(server.Pass) == 0 {
 					return nil, errors.New("目标服务链接不能为空")
 				}
 				proxyPass[server.Listen][name] = &ProxyPass{
-					WEBPass: server.WEBPass,
-					WSPass:  wsPass,
-					WEBType: server.WEBType,
-					WSType:  wsType,
+					Pass:            server.Pass,
+					SocketIoPass:    SocketIoPass,
+					balance:         server.balance,
+					SocketIoBalance: SocketIoBalance,
 					Redirect: RedirectInfo{
 						Code: server.RedirectCode,
 						Url:  server.RedirectUrl,
@@ -243,11 +243,11 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 	}
 
 	if isWS {
-		pass = proxyPass.WSPass
-		passType = proxyPass.WSType
+		pass = proxyPass.SocketIoPass
+		passType = proxyPass.SocketIoBalance
 	} else {
-		pass = proxyPass.WEBPass
-		passType = proxyPass.WEBType
+		pass = proxyPass.Pass
+		passType = proxyPass.balance
 	}
 
 	var urlInfo *url.URL
