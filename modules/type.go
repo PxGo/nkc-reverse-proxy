@@ -3,7 +3,6 @@ package modules
 import (
 	"crypto/tls"
 	"net/http/httputil"
-	"time"
 )
 
 type NKCHandle struct {
@@ -11,19 +10,9 @@ type NKCHandle struct {
 	ReverseProxy *httputil.ReverseProxy
 }
 
-type Transport struct {
-	KeepAlive                 bool          `yaml:"keeplive"`
-	MaxIdleConnections        int           `yaml:"maxIdleConnections"`
-	MaxIdleConnectionsPerHost int           `yaml:"maxIdleConnectionsPerHost"`
-	MaxConnectionsPerHost     int           `yaml:"maxConnectionsPerHost"`
-	Timeout                   time.Duration `yaml:"timeout"`
-	KeepAliveTimeout          time.Duration `yaml:"keepAliveTimeout"`
-	IdleConnectionTimeout     time.Duration `yaml:"idleConnectionTimeout"`
-}
-
 type Server struct {
 	Id           string   `yaml:"id"`
-	Listen       int64    `yaml:"listen"`
+	Listen       uint16   `yaml:"listen"`
 	Name         []string `yaml:"name"`
 	SSLKey       string   `yaml:"SSLKey"`
 	SSLCert      string   `yaml:"SSLCert"`
@@ -36,14 +25,12 @@ type Server struct {
 }
 
 type Configs struct {
-	Transport Transport `yaml:"transport"`
-	Servers   []Server  `yaml:"servers"`
-	ErrorLog  string    `yaml:"errorLog"`
-	PProf     int64     `yaml:"pprof"`
+	Servers []Server `yaml:"servers"`
+	Debug   bool     `yaml:"debug"`
 }
 
 type ServerPort struct {
-	Port      int64
+	Port      uint16
 	TLSConfig *tls.Config
 }
 

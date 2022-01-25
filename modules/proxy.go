@@ -1,10 +1,8 @@
 package modules
 
 import (
-	"net"
 	"net/http"
 	"net/http/httputil"
-	"time"
 )
 
 func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
@@ -13,26 +11,6 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 	}
 	if !isHttps && httpReverseProxy != nil {
 		return httpReverseProxy, nil
-	}
-
-	configs, err := GetConfigs()
-	if err != nil {
-		return nil, err
-	}
-	transportConfig := configs.Transport
-
-	transport := &http.Transport{
-		Proxy:             http.ProxyFromEnvironment,
-		DisableKeepAlives: !transportConfig.KeepAlive,
-		DialContext: (&net.Dialer{
-			Timeout:   transportConfig.Timeout * time.Second,
-			KeepAlive: transportConfig.KeepAliveTimeout * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:   false,
-		MaxIdleConns:        transportConfig.MaxIdleConnections,
-		IdleConnTimeout:     transportConfig.IdleConnectionTimeout * time.Second,
-		MaxIdleConnsPerHost: transportConfig.MaxIdleConnectionsPerHost,
-		MaxConnsPerHost:     transportConfig.MaxConnectionsPerHost,
 	}
 
 	director := func(req *http.Request) {
@@ -60,7 +38,6 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 	}
 
 	reverseProxy := &httputil.ReverseProxy{
-		Transport:    transport,
 		Director:     director,
 		ErrorHandler: errorHandle,
 	}

@@ -1,3 +1,4 @@
 .idea
 .vscode
 /configs.yaml
+/error.log

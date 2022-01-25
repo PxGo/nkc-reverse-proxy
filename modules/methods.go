@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-var proxyPassMap map[int64]map[string]*ProxyPass
+var proxyPassMap map[uint16]map[string]*ProxyPass
 var httpReverseProxy *httputil.ReverseProxy
 var httpsReverseProxy *httputil.ReverseProxy
 
@@ -26,10 +26,16 @@ func GetConfigsPath() (string, error) {
 		return "", err
 	}
 	filePath := path.Join(root, "configs.yaml")
-	if len(filePath) == 0 {
-		return "", errors.New("未指定配置文件路径")
-	}
 	return filePath, nil
+}
+
+func GetErrorLogPath() (string, error) {
+	root, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	errorLogPath := path.Join(root, "error.log")
+	return errorLogPath, nil
 }
 
 func GetConfigs() (*Configs, error) {
@@ -49,12 +55,12 @@ func GetConfigs() (*Configs, error) {
 	return &configs, nil
 }
 
-func GetServersPortFromConfigs() (map[int64]*ServerPort, error) {
+func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
 	configs, err := GetConfigs()
 	if err != nil {
 		return nil, err
 	}
-	serverPortMap := make(map[int64]*ServerPort)
+	serverPortMap := make(map[uint16]*ServerPort)
 	var tlsConfig *tls.Config
 	for _, server := range configs.Servers {
 		var tlsCFG *tls.Config
@@ -71,7 +77,7 @@ func GetServersPortFromConfigs() (map[int64]*ServerPort, error) {
 		if serverPort == nil {
 			serverPortMap[server.Listen] = &ServerPort{Port: server.Listen, TLSConfig: tlsCFG}
 		} else if serverPort.TLSConfig != tlsCFG {
-			return nil, errors.New("端口冲突：" + strconv.FormatInt(server.Listen, 10))
+			return nil, errors.New("端口冲突：" + strconv.Itoa(int(server.Listen)))
 		}
 	}
 	return serverPortMap, nil
@@ -96,11 +102,11 @@ func GetTLSConfig() (*tls.Config, error) {
 	return &cfg, nil
 }
 
-func GetProxyPassMap() (map[int64]map[string]*ProxyPass, error) {
+func GetProxyPassMap() (map[uint16]map[string]*ProxyPass, error) {
 	if proxyPassMap != nil {
 		return proxyPassMap, nil
 	}
-	proxyPass := make(map[int64]map[string]*ProxyPass)
+	proxyPass := make(map[uint16]map[string]*ProxyPass)
 	configs, err := GetConfigs()
 	if err != nil {
 		return nil, err
@@ -189,7 +195,7 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 	host := hostInfo[0]
 	polling := req.Header.Get("X-socket-io")
 	isWS := polling == "polling"
-	var port int64
+	var port uint16
 	var errInfo error
 	if len(hostInfo) == 1 {
 		if isHttps {
@@ -198,7 +204,11 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 			port = 80
 		}
 	} else {
-		port, errInfo = strconv.ParseInt(hostInfo[1], 10, 64)
+		portInt, err := strconv.Atoi(hostInfo[1])
+		if err != nil {
+			return nil, nil, err
+		}
+		port = uint16(portInt)
 		if errInfo != nil {
 			return nil, nil, errInfo
 		}

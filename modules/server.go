@@ -33,8 +33,8 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port int64, cfg *tls.Config) (*http.Server, error) {
-	portString := ":" + strconv.FormatInt(port, 10)
+func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg *tls.Config) (*http.Server, error) {
+	portString := ":" + strconv.Itoa(int(port))
 	isHttps := false
 	if cfg != nil {
 		isHttps = true

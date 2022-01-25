@@ -6,7 +6,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"nkc-proxy/modules"
-	"strconv"
 )
 
 func main() {
@@ -16,11 +15,12 @@ func main() {
 		return
 	}
 
-	if configs.PProf != 0 {
+	debugServerPort := "9527"
+
+	if configs.Debug {
 		go func() {
-			// pprof 调试
-			fmt.Printf("pprof: localhost:%v/debug/pprof\n", configs.PProf)
-			log.Fatal(http.ListenAndServe(":"+strconv.FormatInt(configs.PProf, 10), nil))
+			fmt.Printf("Debug server is running at %v\n", debugServerPort)
+			log.Fatal(http.ListenAndServe(":"+debugServerPort, nil))
 		}()
 	}
 
@@ -37,7 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ports := []int64{}
+	ports := []uint16{}
 	for port, serverPort := range serversPort {
 		ports = append(ports, port)
 		go func(sp *modules.ServerPort) {
@@ -53,6 +53,6 @@ func main() {
 		}(serverPort)
 	}
 
-	fmt.Printf("server is running at %v\n", ports)
+	fmt.Printf("Proxy server is running at %v\n", ports)
 	select {}
 }
