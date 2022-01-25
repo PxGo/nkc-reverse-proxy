@@ -1,4 +1,4 @@
-module nkc-proxy
+module nkc-reverse-proxy
 
 go 1.16
 

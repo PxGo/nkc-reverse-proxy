@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"nkc-proxy/modules"
+	"nkc-reverse-proxy/modules"
 )
 
 func main() {
