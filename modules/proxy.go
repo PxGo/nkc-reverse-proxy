@@ -15,24 +15,36 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 
 	director := func(req *http.Request) {
 		passUrl, _, err := GetTargetPassInfo(req, isHttps)
+
+		AddAccessLog(req.Host, req.URL, "Reverse Proxy", passUrl)
+
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			return
 		}
+
 		req.URL.Scheme = passUrl.Scheme
 		req.URL.Host = passUrl.Host
+
+		host, _, err := GetHostInfo(req.Host, isHttps)
+		if err != nil {
+			AddErrorLog(err)
+			return
+		}
+
+		req.Host = host
 	}
 
 	errorHandle := func(w http.ResponseWriter, r *http.Request, err error) {
-		ErrorLogger.Println(err)
+		AddErrorLog(err)
 		pageContent, err := GetPageByStatus(http.StatusServiceUnavailable)
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			return
 		}
 		_, err = w.Write(pageContent)
 		if err != nil {
-			ErrorLogger.Println(err)
+			AddErrorLog(err)
 			return
 		}
 	}

@@ -21,6 +21,8 @@ var proxyPassMap map[uint16]map[string]*ProxyPass
 var httpReverseProxy *httputil.ReverseProxy
 var httpsReverseProxy *httputil.ReverseProxy
 
+var configs *Configs
+
 func GetConfigsPath() (string, string, error) {
 	root, err := os.Getwd()
 	if err != nil {
@@ -31,16 +33,19 @@ func GetConfigsPath() (string, string, error) {
 	return filePath, templateFilePath, nil
 }
 
-func GetErrorLogPath() (string, error) {
+func GetLogPathByLogType(logType string) (string, error) {
 	root, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	errorLogPath := path.Join(root, "error.log")
+	errorLogPath := path.Join(root, logType+".log")
 	return errorLogPath, nil
 }
 
 func GetConfigs() (*Configs, error) {
+	if configs != nil {
+		return configs, nil
+	}
 	configFilePath, templateConfigFilePath, err := GetConfigsPath()
 	if err != nil {
 		return nil, err
@@ -64,12 +69,11 @@ func GetConfigs() (*Configs, error) {
 			return nil, err
 		}
 	}
-	var configs Configs
 	err = yaml.Unmarshal(file, &configs)
 	if err != nil {
 		return nil, err
 	}
-	return &configs, nil
+	return configs, nil
 }
 
 func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
@@ -200,20 +204,15 @@ func GetUrlByPassType(pass []string, passType string, ip string) string {
 	return pass[index]
 }
 
-func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo, error) {
-	proxyPassMap, err := GetProxyPassMap()
-	if err != nil {
-		return nil, nil, err
-	}
-	hostInfo := strings.Split(req.Host, ":")
+func GetHostInfo(host string, isHttps bool) (string, uint16, error) {
+	hostInfo := strings.Split(host, ":")
 	if len(hostInfo) == 0 {
-		return nil, nil, errors.New("客户端未指定 host")
+		return "", 0, errors.New("host error. host=" + host)
 	}
-	host := hostInfo[0]
-	polling := req.Header.Get("x-socket-io")
-	isWS := polling == "polling"
+	host = hostInfo[0]
+
 	var port uint16
-	var errInfo error
+
 	if len(hostInfo) == 1 {
 		if isHttps {
 			port = 443
@@ -223,17 +222,22 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 	} else {
 		portInt, err := strconv.Atoi(hostInfo[1])
 		if err != nil {
-			return nil, nil, err
+			return "", 0, err
 		}
 		port = uint16(portInt)
-		if errInfo != nil {
-			return nil, nil, errInfo
-		}
 	}
+	return host, port, nil
+}
 
+func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo, error) {
+	proxyPassMap, err := GetProxyPassMap()
 	if err != nil {
 		return nil, nil, err
 	}
+	host, port, err := GetHostInfo(req.Host, isHttps)
+	polling := req.Header.Get("x-socket-io")
+	isWS := polling == "polling"
+
 	var pass []string
 	var passType string
 
