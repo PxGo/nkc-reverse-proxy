@@ -2,18 +2,64 @@ package main
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/config"
-	"github.com/tokisakiyuu/nkc-proxy-go-pure/pkg/proxy"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"nkc-reverse-proxy/modules"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Error: 请在命令行参数中加入配置文件路径")
+	configs, err := modules.GetConfigs()
+	if err != nil {
+		modules.ErrorLogger.Println(err)
+		log.Fatal(err)
 	}
-	configFile := os.Args[1]
-	conf := config.Parse(configFile)
-	serve := proxy.NewNKCProxy(conf)
-	serve.Launch()
+
+	debugServerPort := "9527"
+
+	if configs.Debug {
+		go func() {
+			fmt.Printf("Debug server is running at %v\n", debugServerPort)
+			err := http.ListenAndServe(":"+debugServerPort, nil)
+			if err != nil {
+				modules.ErrorLogger.Println(err)
+				log.Fatal(err)
+			}
+		}()
+	}
+
+	serversPort, err := modules.GetServersPortFromConfigs()
+	if err != nil {
+		modules.ErrorLogger.Println(err)
+		log.Fatal(err)
+	}
+
+	httpsReverseProxy, err := modules.GetReverseProxy(true)
+	if err != nil {
+		modules.ErrorLogger.Println(err)
+		log.Fatal(err)
+	}
+	httpReverseProxy, err := modules.GetReverseProxy(false)
+	if err != nil {
+		modules.ErrorLogger.Println(err)
+		log.Fatal(err)
+	}
+	ports := []uint16{}
+	for port, serverPort := range serversPort {
+		ports = append(ports, port)
+		go func(sp *modules.ServerPort) {
+			reverseProxy := httpReverseProxy
+			if sp.TLSConfig != nil {
+				reverseProxy = httpsReverseProxy
+			}
+			_, err := modules.CreateServerAndStart(reverseProxy, sp.Port, sp.TLSConfig)
+			if err != nil {
+				modules.ErrorLogger.Println(err)
+				log.Fatal(err)
+			}
+		}(serverPort)
+	}
+
+	fmt.Printf("Proxy server is running at %v\n", ports)
+	select {}
 }

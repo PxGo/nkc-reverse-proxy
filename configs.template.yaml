@@ -1,0 +1,70 @@
+debug: false
+servers:
+  # http
+  -
+    # 名称
+    id: "test"
+    # 端口
+    listen: 80
+    # 接受的域名
+    name:
+      - localhost
+      - 127.0.0.1
+    # 目标服务
+    pass:
+      - http://127.0.0.1:8080
+    # 负载均衡策略 random（随机）,ip_hash（客户端 IP）
+    balance: "random"
+
+    # 如果 header['x-socket-io'] = 'polling'
+    # 那么将会从 socket_io_pass 中选取目标服务
+    # 如果 socket_io_pass 为空则任然从 pass 中选取
+
+    # socket_io_pass:
+    #   - http://127.0.0.1:9000
+
+    # 如果 header['x-socket-io'] = 'polling'
+    # 那么将会从 socket_io_balance 中读取负载均衡策略
+    # 如果 socket_io_balance 为空则任然从 balance 中读取
+    
+    # socket_io_balance: "ip_hash"
+
+
+#  # https
+#  -
+#    # 名称
+#    id: "nkc"
+#    # 暴露的端口
+#    listen: 443
+#    # 接受的域名
+#    name:
+#      - www.kechuang.org
+#    # ssl cert
+#    ssl_key: "/ssl/www.kechuang.org.key"
+#    ssl_cert: "/ssl/www.kechuang.org.crt"
+#    # 目标服务
+#    pass:
+#      - http://127.0.0.1:9000
+#      - http://127.0.0.1:9001
+#      - http://127.0.0.1:9002
+#      - http://127.0.0.1:9003
+#    balance: "random"
+#    socket_io_pass:
+#      - http://127.0.0.1:8900
+#      - http://127.0.0.1:8901
+#      - http://127.0.0.1:8902
+#      - http://127.0.0.1:8903
+#    socket_io_balance: "ip_hash"
+#
+#  # redirect
+#  -
+#    id: "nkc redirect"
+#    listen: 80
+#    name:
+#      - www.kechuang.org
+#      - kechuang.org
+#      - bbs.kechuang.org
+#    # 重定向状态码
+#    redirect_code: 301
+#    # 重定向目标链接
+#    redirect_url: "https://www.kechuang.org"
