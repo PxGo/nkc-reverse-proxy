@@ -19,13 +19,15 @@ servers:
     # 如果 header['x-socket-io'] = 'polling'
     # 那么将会从 socket_io_pass 中选取目标服务
     # 如果 socket_io_pass 为空则任然从 pass 中选取
-    socket_io_pass:
-      - http://127.0.0.1:9000
-      -
+
+    # socket_io_pass:
+    #   - http://127.0.0.1:9000
+
     # 如果 header['x-socket-io'] = 'polling'
     # 那么将会从 socket_io_balance 中读取负载均衡策略
     # 如果 socket_io_balance 为空则任然从 balance 中读取
-    socket_io_balance: "ip_hash"
+    
+    # socket_io_balance: "ip_hash"
 
 
 #  # https

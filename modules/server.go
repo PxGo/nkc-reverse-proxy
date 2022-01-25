@@ -48,9 +48,17 @@ func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg 
 	}
 	if isHttps {
 		server.TLSConfig = cfg
-		log.Fatal(server.ListenAndServeTLS("", ""))
+		err := server.ListenAndServeTLS("", "")
+		if err != nil {
+			ErrorLogger.Println(err)
+			log.Fatal(err)
+		}
 	} else {
-		log.Fatal(server.ListenAndServe())
+		err := server.ListenAndServe()
+		if err != nil {
+			ErrorLogger.Println(err)
+			log.Fatal(err)
+		}
 	}
 	return &server, nil
 }

@@ -210,7 +210,7 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 		return nil, nil, errors.New("客户端未指定 host")
 	}
 	host := hostInfo[0]
-	polling := req.Header.Get("X-socket-io")
+	polling := req.Header.Get("x-socket-io")
 	isWS := polling == "polling"
 	var port uint16
 	var errInfo error

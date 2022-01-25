@@ -11,8 +11,8 @@ import (
 func main() {
 	configs, err := modules.GetConfigs()
 	if err != nil {
-		fmt.Println(err)
-		return
+		modules.ErrorLogger.Println(err)
+		log.Fatal(err)
 	}
 
 	debugServerPort := "9527"
@@ -20,21 +20,28 @@ func main() {
 	if configs.Debug {
 		go func() {
 			fmt.Printf("Debug server is running at %v\n", debugServerPort)
-			log.Fatal(http.ListenAndServe(":"+debugServerPort, nil))
+			err := http.ListenAndServe(":"+debugServerPort, nil)
+			if err != nil {
+				modules.ErrorLogger.Println(err)
+				log.Fatal(err)
+			}
 		}()
 	}
 
 	serversPort, err := modules.GetServersPortFromConfigs()
 	if err != nil {
+		modules.ErrorLogger.Println(err)
 		log.Fatal(err)
 	}
 
 	httpsReverseProxy, err := modules.GetReverseProxy(true)
 	if err != nil {
+		modules.ErrorLogger.Println(err)
 		log.Fatal(err)
 	}
 	httpReverseProxy, err := modules.GetReverseProxy(false)
 	if err != nil {
+		modules.ErrorLogger.Println(err)
 		log.Fatal(err)
 	}
 	ports := []uint16{}
@@ -48,7 +55,7 @@ func main() {
 			_, err := modules.CreateServerAndStart(reverseProxy, sp.Port, sp.TLSConfig)
 			if err != nil {
 				modules.ErrorLogger.Println(err)
-				return
+				log.Fatal(err)
 			}
 		}(serverPort)
 	}
