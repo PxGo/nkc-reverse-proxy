@@ -1,15 +1,17 @@
 package modules
 
 import (
-	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 )
 
 var (
-	ErrorLogger  *log.Logger
-	AccessLogger *log.Logger
-	Debug        bool
+	ErrorFileLogger  *log.Logger
+	AccessFileLogger *log.Logger
+	ErrorLogger      *log.Logger
+	AccessLogger     *log.Logger
+	Debug            bool
 )
 
 func init() {
@@ -36,23 +38,39 @@ func init() {
 		log.Fatal(err)
 	}
 
-	ErrorLogger = log.New(errorFile, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-	AccessLogger = log.New(accessFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	fileLogFormat := log.Ldate | log.Ltime
+	ErrorFileLogger = log.New(errorFile, "", fileLogFormat)
+	ErrorLogger = log.New(os.Stderr, "ERROR ", fileLogFormat)
+	AccessFileLogger = log.New(accessFile, "", fileLogFormat)
+	AccessLogger = log.New(os.Stdout, "INFO ", fileLogFormat)
 
 	Debug = configs.Debug
 
 }
 
 func AddAccessLog(v ...interface{}) {
-	AccessLogger.Println(v)
+	AccessFileLogger.Println(v...)
 	if Debug {
-		fmt.Println(v)
+		AccessLogger.Println(v...)
 	}
 }
 
-func AddErrorLog(v ...interface{}) {
-	ErrorLogger.Println(v)
+func AddErrorLog(err error) {
+	stackInfo := string(debug.Stack())
+	ErrorFileLogger.Println(err, "\n", stackInfo)
 	if Debug {
-		fmt.Println(v)
+		ErrorLogger.Println(err, "\n", stackInfo)
 	}
+}
+
+func AddRedirectLog(code int, url string, targetUrl string) {
+	AddAccessLog("Redirect", code, url, ">>>", targetUrl)
+}
+
+func AddReverseProxyLog(url string, targetUrl string) {
+	AddAccessLog("ReverseProxy", url, ">>>", targetUrl)
+}
+
+func AddNotFoundError(url string) {
+	AddAccessLog("NotFound", url)
 }

@@ -16,7 +16,7 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 	director := func(req *http.Request) {
 		passUrl, _, err := GetTargetPassInfo(req, isHttps)
 
-		AddAccessLog(req.Host, req.URL, "Reverse Proxy", passUrl)
+		AddReverseProxyLog(req.Host+req.URL.String(), passUrl.Host+req.URL.String())
 
 		if err != nil {
 			AddErrorLog(err)
