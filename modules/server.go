@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"strconv"
 )
 
@@ -15,12 +16,20 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 	if redirectInfo != nil && redirectInfo.Url != "" {
-		AddAccessLog(request.Host, request.URL, "Redirect", redirectInfo.Code, redirectInfo.Url)
-		http.Redirect(writer, request, redirectInfo.Url, redirectInfo.Code)
+		redirectUrl, err := url.Parse(redirectInfo.Url)
+		if err != nil {
+			AddErrorLog(err)
+			return
+		}
+		if redirectUrl.Path == "" {
+			redirectUrl.Path = request.URL.Path
+		}
+		AddRedirectLog(redirectInfo.Code, request.Host+request.URL.String(), redirectUrl.String())
+		http.Redirect(writer, request, redirectUrl.String(), redirectInfo.Code)
 	} else if passUrl != nil {
 		handle.ReverseProxy.ServeHTTP(writer, request)
 	} else {
-		AddAccessLog(request.Host, request.URL, "NotFound")
+		AddNotFoundError(request.Host + request.URL.String())
 		pageContent, err := GetPageByStatus(http.StatusNotFound)
 		if err != nil {
 			AddErrorLog(err)
