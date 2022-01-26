@@ -63,14 +63,14 @@ func AddErrorLog(err error) {
 	}
 }
 
-func AddRedirectLog(code int, url string, targetUrl string) {
-	AddAccessLog("Redirect", code, url, ">>>", targetUrl)
+func AddRedirectLog(method string, code int, url string, targetUrl string) {
+	AddAccessLog("Redirect", method, code, url, ">>>", targetUrl)
 }
 
-func AddReverseProxyLog(url string, targetUrl string) {
-	AddAccessLog("ReverseProxy", url, ">>>", targetUrl)
+func AddReverseProxyLog(method string, url string, targetUrl string) {
+	AddAccessLog("ReverseProxy", method, url, ">>>", targetUrl)
 }
 
-func AddNotFoundError(url string) {
-	AddAccessLog("NotFound", url)
+func AddNotFoundError(method string, url string) {
+	AddAccessLog("NotFound", method, url)
 }
