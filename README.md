@@ -6,6 +6,8 @@
     # cd nkc-reverse-proxy
     # copy configs.template.yaml configs.yaml
     
-    windows 
+    windows
     # ./nkc-reverse-proxy.exe
+    linux amd64
+    # ./nkc-reverse-proxy
 ```
