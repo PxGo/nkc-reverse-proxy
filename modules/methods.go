@@ -236,7 +236,7 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 	}
 	host, port, err := GetHostInfo(req.Host, isHttps)
 	polling := req.Header.Get("x-socket-io")
-	isWS := polling == "polling"
+	isWS := polling == "polling" || strings.HasPrefix(req.URL.String(), "/socket.io/?")
 
 	var pass []string
 	var passType string

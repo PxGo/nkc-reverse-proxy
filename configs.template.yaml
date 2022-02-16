@@ -16,7 +16,7 @@ servers:
     # 负载均衡策略 random（随机）,ip_hash（客户端 IP）
     balance: "random"
 
-    # 如果 header['x-socket-io'] = 'polling'
+    # 如果 header['x-socket-io'] = 'polling' 或 path 以 /socket.io/? 开始
     # 那么将会从 socket_io_pass 中选取目标服务
     # 如果 socket_io_pass 为空则任然从 pass 中选取
 
