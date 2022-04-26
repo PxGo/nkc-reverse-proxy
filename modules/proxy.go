@@ -42,6 +42,7 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 			AddErrorLog(err)
 			return
 		}
+		w.WriteHeader(http.StatusServiceUnavailable)
 		_, err = w.Write(pageContent)
 		if err != nil {
 			AddErrorLog(err)

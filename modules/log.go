@@ -3,7 +3,6 @@ package modules
 import (
 	"log"
 	"os"
-	"runtime/debug"
 )
 
 var (
@@ -56,10 +55,10 @@ func AddAccessLog(v ...interface{}) {
 }
 
 func AddErrorLog(err error) {
-	stackInfo := string(debug.Stack())
-	ErrorFileLogger.Println(err, "\n", stackInfo)
+	//stackInfo := string(debug.Stack())
+	ErrorFileLogger.Println(err /*"\n", stackInfo*/)
 	if Debug {
-		ErrorLogger.Println(err, "\n", stackInfo)
+		ErrorLogger.Println(err /*"\n", stackInfo*/)
 	}
 }
 
