@@ -18,7 +18,7 @@ type Server struct {
 	SSLCert         string   `yaml:"ssl_cert"`
 	Pass            []string `yaml:"pass"`
 	SocketIoPass    []string `yaml:"socket_io_pass"`
-	balance         string   `yaml:"balance"`
+	Balance         string   `yaml:"balance"`
 	SocketIoBalance string   `yaml:"socket_io_balance"`
 	RedirectCode    int      `yaml:"redirect_code"`
 	RedirectUrl     string   `yaml:"redirect_url"`
@@ -37,7 +37,7 @@ type ServerPort struct {
 type ProxyPass struct {
 	Pass            []string
 	SocketIoPass    []string
-	balance         string
+	Balance         string
 	SocketIoBalance string
 	Redirect        RedirectInfo
 }

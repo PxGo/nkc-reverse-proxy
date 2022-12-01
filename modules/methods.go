@@ -146,7 +146,7 @@ func GetProxyPassMap() (map[uint16]map[string]*ProxyPass, error) {
 					SocketIoPass = server.Pass
 				}
 				if server.SocketIoBalance == "" {
-					SocketIoBalance = server.balance
+					SocketIoBalance = server.Balance
 				} else {
 					SocketIoBalance = server.SocketIoBalance
 				}
@@ -156,7 +156,7 @@ func GetProxyPassMap() (map[uint16]map[string]*ProxyPass, error) {
 				proxyPass[server.Listen][name] = &ProxyPass{
 					Pass:            server.Pass,
 					SocketIoPass:    SocketIoPass,
-					balance:         server.balance,
+					Balance:         server.Balance,
 					SocketIoBalance: SocketIoBalance,
 					Redirect: RedirectInfo{
 						Code: server.RedirectCode,
@@ -251,7 +251,7 @@ func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo
 		passType = proxyPass.SocketIoBalance
 	} else {
 		pass = proxyPass.Pass
-		passType = proxyPass.balance
+		passType = proxyPass.Balance
 	}
 
 	var urlInfo *url.URL
