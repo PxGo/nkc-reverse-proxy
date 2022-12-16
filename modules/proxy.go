@@ -3,36 +3,37 @@ package modules
 import (
 	"net/http"
 	"net/http/httputil"
+	"net/url"
+	"strconv"
 )
 
-func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
-	if isHttps && httpsReverseProxy != nil {
-		return httpsReverseProxy, nil
-	}
-	if !isHttps && httpReverseProxy != nil {
-		return httpReverseProxy, nil
-	}
-
+func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 	director := func(req *http.Request) {
-		passUrl, _, err := GetTargetPassInfo(req, isHttps)
-
-		AddReverseProxyLog(req.Method, req.Host+req.URL.String(), passUrl.Host+req.URL.String())
-
+		originHost := req.Host
+		host, err := GetRequestAddr(originHost)
+		originUrl := req.URL.String()
 		if err != nil {
 			AddErrorLog(err)
 			return
 		}
-
-		req.URL.Scheme = passUrl.Scheme
-		req.URL.Host = passUrl.Host
-
-		host, _, err := GetHostInfo(req.Host, isHttps)
+		location, err := GetTargetLocation(host, port, originUrl)
 		if err != nil {
 			AddErrorLog(err)
 			return
 		}
+		ip := GetClientIP(req)
+		targetUrlString := GetUrlByPassType(location.Pass, location.Balance, ip)
+		targetUrl, err := url.Parse(targetUrlString)
+		if err != nil {
+			AddErrorLog(err)
+			return
+		}
+		req.URL.Scheme = targetUrl.Scheme
+		req.URL.Host = targetUrl.Host
 
-		req.Host = host
+		req.Host = originHost
+
+		AddReverseProxyLog(req.Method, host+":"+strconv.Itoa(int(port))+originUrl, targetUrlString+originUrl)
 	}
 
 	errorHandle := func(w http.ResponseWriter, r *http.Request, err error) {
@@ -53,12 +54,6 @@ func GetReverseProxy(isHttps bool) (*httputil.ReverseProxy, error) {
 	reverseProxy := &httputil.ReverseProxy{
 		Director:     director,
 		ErrorHandler: errorHandle,
-	}
-
-	if isHttps {
-		httpsReverseProxy = reverseProxy
-	} else {
-		httpReverseProxy = reverseProxy
 	}
 	return reverseProxy, nil
 }

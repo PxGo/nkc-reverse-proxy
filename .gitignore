@@ -1,6 +1,5 @@
 .idea
 .vscode
 /configs.yaml
-/error.log
-/access.log
 /ssl
+/logs

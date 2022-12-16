@@ -6,39 +6,52 @@ import (
 	"github.com/dgryski/go-farm"
 	"github.com/go-yaml/yaml"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-var proxyPassMap map[uint16]map[string]*ProxyPass
-var httpReverseProxy *httputil.ReverseProxy
-var httpsReverseProxy *httputil.ReverseProxy
+var serverLocation ServerLocation
 
 var configs *Configs
 
 func GetConfigsPath() (string, string, error) {
+	filePath := "configs.yaml"
 	root, err := os.Getwd()
 	if err != nil {
 		return "", "", err
 	}
-	filePath := path.Join(root, "configs.yaml")
+	if len(os.Args) > 1 {
+		filePath = os.Args[1]
+	}
+	if !path.IsAbs(filePath) {
+		filePath = path.Join(root, filePath)
+	}
 	templateFilePath := path.Join(root, "configs.template.yaml")
 	return filePath, templateFilePath, nil
 }
 
-func GetLogPathByLogType(logType string) (string, error) {
+func GetLogDirPath() (string, error) {
 	root, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	errorLogPath := path.Join(root, logType+".log")
+	logDir := path.Join(root, "./logs")
+	return logDir, nil
+}
+
+func GetLogPathByLogType(logType string) (string, error) {
+	logDir, err := GetLogDirPath()
+	if err != nil {
+		return "", err
+	}
+	errorLogPath := path.Join(logDir, logType+".log")
 	return errorLogPath, nil
 }
 
@@ -123,51 +136,28 @@ func GetTLSConfig() (*tls.Config, error) {
 	return &cfg, nil
 }
 
-func GetProxyPassMap() (map[uint16]map[string]*ProxyPass, error) {
-	if proxyPassMap != nil {
-		return proxyPassMap, nil
+func GetServerLocation() (ServerLocation, error) {
+	if serverLocation != nil {
+		return serverLocation, nil
 	}
-	proxyPass := make(map[uint16]map[string]*ProxyPass)
+	serverLocation = make(ServerLocation)
 	configs, err := GetConfigs()
 	if err != nil {
 		return nil, err
 	}
 	for _, server := range configs.Servers {
-		if proxyPass[server.Listen] == nil {
-			proxyPass[server.Listen] = make(map[string]*ProxyPass)
+		if serverLocation[server.Listen] == nil {
+			serverLocation[server.Listen] = make(NameLocation)
 		}
 		for _, name := range server.Name {
-			if proxyPass[server.Listen][name] == nil {
-				var SocketIoPass []string
-				var SocketIoBalance string
-				if len(server.SocketIoPass) > 0 {
-					SocketIoPass = server.SocketIoPass
-				} else {
-					SocketIoPass = server.Pass
-				}
-				if server.SocketIoBalance == "" {
-					SocketIoBalance = server.Balance
-				} else {
-					SocketIoBalance = server.SocketIoBalance
-				}
-				if server.RedirectUrl == "" && len(server.Pass) == 0 {
-					return nil, errors.New("目标服务链接不能为空")
-				}
-				proxyPass[server.Listen][name] = &ProxyPass{
-					Pass:            server.Pass,
-					SocketIoPass:    SocketIoPass,
-					Balance:         server.Balance,
-					SocketIoBalance: SocketIoBalance,
-					Redirect: RedirectInfo{
-						Code: server.RedirectCode,
-						Url:  server.RedirectUrl,
-					},
-				}
+			if serverLocation[server.Listen][name] == nil {
+				serverLocation[server.Listen][name] = server.Location
+			} else {
+				return nil, errors.New("端口或域名重复")
 			}
 		}
 	}
-	proxyPassMap = proxyPass
-	return proxyPassMap, nil
+	return serverLocation, nil
 }
 
 func GetClientIP(r *http.Request) string {
@@ -194,77 +184,115 @@ func GetUrlByPassType(pass []string, passType string, ip string) string {
 	passCount := len(pass)
 	if passCount == 1 {
 		index = 0
-	} else if passType == "random" {
-		index = uint64(rand.Intn(passCount))
-	} else {
+	} else if passType == "ip_hash" {
 		bytes := []byte(ip)
 		hash := farm.Hash64(bytes)
 		index = hash % uint64(passCount)
+	} else {
+		index = uint64(rand.Intn(passCount))
 	}
 	return pass[index]
 }
 
-func GetHostInfo(host string, isHttps bool) (string, uint16, error) {
+func GetRequestAddr(host string) (string, error) {
 	hostInfo := strings.Split(host, ":")
 	if len(hostInfo) == 0 {
-		return "", 0, errors.New("host error. host=" + host)
+		return "", errors.New("host error. host=" + host)
 	}
 	host = hostInfo[0]
 
-	var port uint16
-
-	if len(hostInfo) == 1 {
-		if isHttps {
-			port = 443
-		} else {
-			port = 80
-		}
-	} else {
-		portInt, err := strconv.Atoi(hostInfo[1])
-		if err != nil {
-			return "", 0, err
-		}
-		port = uint16(portInt)
-	}
-	return host, port, nil
+	return host, nil
 }
 
-func GetTargetPassInfo(req *http.Request, isHttps bool) (*url.URL, *RedirectInfo, error) {
-	proxyPassMap, err := GetProxyPassMap()
+func GetTargetLocation(host string, port uint16, url string) (*Location, error) {
+	serverLocation, err := GetServerLocation()
+	if err != nil {
+		return nil, err
+	}
+	if serverLocation[port] == nil ||
+		serverLocation[port][host] == nil ||
+		len(serverLocation[port][host]) == 0 {
+		return nil, nil
+	}
+	locations := serverLocation[port][host]
+	var targetLocation *Location
+	for i := len(locations) - 1; i >= 0; i-- {
+		location := locations[i]
+		regString := location.Reg
+		matched, err := regexp.MatchString(regString, url)
+		if err != nil {
+			return nil, err
+		}
+		if matched {
+			targetLocation = &location
+			break
+		}
+	}
+	return targetLocation, nil
+}
+
+func GetLogFileByLogType(logType string) (*os.File, error) {
+	fileLogPath, err := GetLogPathByLogType(logType)
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.OpenFile(fileLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func GetLoggerByLogType(logType string) (*log.Logger, *log.Logger, error) {
+	file, err := GetLogFileByLogType(logType)
 	if err != nil {
 		return nil, nil, err
 	}
-	host, port, err := GetHostInfo(req.Host, isHttps)
-	polling := req.Header.Get("x-socket-io")
-	isWS := polling == "polling" || strings.HasPrefix(req.URL.String(), "/socket.io/?")
+	fileLogFormat := log.Ldate | log.Ltime
+	fileLogger := log.New(file, "", fileLogFormat)
+	logger := log.New(os.Stderr, "["+logType+"] ", fileLogFormat)
+	return fileLogger, logger, nil
+}
 
-	var pass []string
-	var passType string
-
-	proxyPass := proxyPassMap[port][host]
-	if proxyPass == nil {
-		return nil, nil, nil
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
 	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
 
-	if isWS {
-		pass = proxyPass.SocketIoPass
-		passType = proxyPass.SocketIoBalance
+func CreateDir(path string) error {
+	err := os.Mkdir(path, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckAndCreateDir(path string) error {
+	exist, _ := PathExists(path)
+	if exist {
+		return nil
 	} else {
-		pass = proxyPass.Pass
-		passType = proxyPass.Balance
-	}
-
-	var urlInfo *url.URL
-
-	if len(pass) > 0 {
-		ip := GetClientIP(req)
-		targetUrlString := GetUrlByPassType(pass, passType, ip)
-		var err error
-		urlInfo, err = url.Parse(targetUrlString)
+		err := CreateDir(path)
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
+		return nil
 	}
+}
 
-	return urlInfo, &proxyPass.Redirect, nil
+func InitLogDir() {
+	logDirPath, err := GetLogDirPath()
+	if err != nil {
+		log.Fatal(err)
+	}
+	createDirError := CheckAndCreateDir(logDirPath)
+	if createDirError != nil {
+		log.Fatal(createDirError)
+	}
 }

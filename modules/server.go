@@ -10,13 +10,16 @@ import (
 )
 
 func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	passUrl, redirectInfo, err := GetTargetPassInfo(request, handle.IsHTTPS)
+	// 获取请求的域、端口以及路径
+	host, err := GetRequestAddr(request.Host)
+	location, err := GetTargetLocation(host, handle.Port, request.URL.String())
 	if err != nil {
 		AddErrorLog(err)
 		return
 	}
-	if redirectInfo != nil && redirectInfo.Url != "" {
-		redirectUrl, err := url.Parse(redirectInfo.Url)
+	if location != nil && location.RedirectUrl != "" && location.RedirectCode != 0 {
+		// 重定向
+		redirectUrl, err := url.Parse(location.RedirectUrl)
 		if err != nil {
 			AddErrorLog(err)
 			return
@@ -24,9 +27,9 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		if redirectUrl.Path == "" {
 			redirectUrl.Path = request.URL.Path
 		}
-		AddRedirectLog(request.Method, redirectInfo.Code, request.Host+request.URL.String(), redirectUrl.String())
-		http.Redirect(writer, request, redirectUrl.String(), redirectInfo.Code)
-	} else if passUrl != nil {
+		AddRedirectLog(request.Method, location.RedirectCode, request.Host+request.URL.String(), redirectUrl.String())
+		http.Redirect(writer, request, redirectUrl.String(), location.RedirectCode)
+	} else if location != nil && location.Pass != nil && len(location.Pass) > 0 {
 		handle.ReverseProxy.ServeHTTP(writer, request)
 	} else {
 		AddNotFoundError(request.Method, request.Host+request.URL.String())
@@ -54,6 +57,7 @@ func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg 
 		Addr: portString,
 		Handler: &NKCHandle{
 			IsHTTPS:      isHttps,
+			Port:         port,
 			ReverseProxy: reverseProxy,
 		},
 	}

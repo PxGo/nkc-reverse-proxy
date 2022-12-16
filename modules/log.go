@@ -2,16 +2,20 @@ package modules
 
 import (
 	"log"
-	"os"
 )
 
 var (
-	ErrorFileLogger  *log.Logger
-	AccessFileLogger *log.Logger
-	ErrorLogger      *log.Logger
-	AccessLogger     *log.Logger
-	Debug            bool
+	ErrorFileLogger   *log.Logger
+	ErrorLogger       *log.Logger
+	InfoFileLogger    *log.Logger
+	InfoLogger        *log.Logger
+	WarningFileLogger *log.Logger
+	WarningLogger     *log.Logger
+	DebugFileLogger   *log.Logger
+	DebugLogger       *log.Logger
 )
+
+var console Console
 
 func init() {
 
@@ -20,56 +24,67 @@ func init() {
 		log.Fatal(err)
 	}
 
-	errorLogPath, err := GetLogPathByLogType("error")
+	InitLogDir()
+
+	console.Debug = configs.Console.Debug
+	console.Info = configs.Console.Info
+	console.Warning = configs.Console.Warning
+	console.Error = configs.Console.Error
+
+	ErrorFileLogger, ErrorLogger, err = GetLoggerByLogType("error")
 	if err != nil {
 		log.Fatal(err)
 	}
-	accessLogPath, err := GetLogPathByLogType("access")
+	InfoFileLogger, InfoLogger, err = GetLoggerByLogType("info")
 	if err != nil {
 		log.Fatal(err)
 	}
-	errorFile, err := os.OpenFile(errorLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	WarningFileLogger, WarningLogger, err = GetLoggerByLogType("warning")
 	if err != nil {
 		log.Fatal(err)
 	}
-	accessFile, err := os.OpenFile(accessLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	DebugFileLogger, DebugLogger, err = GetLoggerByLogType("debug")
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	fileLogFormat := log.Ldate | log.Ltime
-	ErrorFileLogger = log.New(errorFile, "", fileLogFormat)
-	ErrorLogger = log.New(os.Stderr, "ERROR ", fileLogFormat)
-	AccessFileLogger = log.New(accessFile, "", fileLogFormat)
-	AccessLogger = log.New(os.Stdout, "INFO ", fileLogFormat)
-
-	Debug = configs.Debug
-
-}
-
-func AddAccessLog(v ...interface{}) {
-	AccessFileLogger.Println(v...)
-	if Debug {
-		AccessLogger.Println(v...)
 	}
 }
 
 func AddErrorLog(err error) {
-	//stackInfo := string(debug.Stack())
 	ErrorFileLogger.Println(err /*"\n", stackInfo*/)
-	if Debug {
+	if console.Error {
 		ErrorLogger.Println(err /*"\n", stackInfo*/)
 	}
 }
 
+func AddInfoLog(content string) {
+	InfoFileLogger.Println(content)
+	if console.Info {
+		InfoLogger.Println(content)
+	}
+}
+
+func AddWarningLog(content string) {
+	WarningFileLogger.Println(content)
+	if console.Warning {
+		WarningLogger.Println(content)
+	}
+}
+
+func AddDebugLog(content string) {
+	DebugFileLogger.Println(content)
+	if console.Debug {
+		DebugLogger.Println(content)
+	}
+}
+
 func AddRedirectLog(method string, code int, url string, targetUrl string) {
-	AddAccessLog("Redirect", method, code, url, ">>>", targetUrl)
+	AddInfoLog("Redirect" + " " + method + " " + string(rune(code)) + " " + url + " " + targetUrl)
 }
 
 func AddReverseProxyLog(method string, url string, targetUrl string) {
-	AddAccessLog("ReverseProxy", method, url, ">>>", targetUrl)
+	AddInfoLog("ReverseProxy" + " " + method + " " + url + " " + ">>>" + " " + targetUrl)
 }
 
 func AddNotFoundError(method string, url string) {
-	AddAccessLog("NotFound", method, url)
+	AddInfoLog("NotFound" + " " + method + " " + url)
 }
