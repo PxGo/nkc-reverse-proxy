@@ -21,8 +21,8 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 			AddErrorLog(err)
 			return
 		}
-		ip := GetClientIP(req)
-		targetUrlString := GetUrlByPassType(location.Pass, location.Balance, ip)
+		realIp, realPort := GetClientRealAddr(req)
+		targetUrlString := GetUrlByPassType(location.Pass, location.Balance, realIp)
 		targetUrl, err := url.Parse(targetUrlString)
 		if err != nil {
 			AddErrorLog(err)
@@ -33,7 +33,9 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 
 		req.Host = originHost
 
-		AddReverseProxyLog(req.Method, host+":"+strconv.Itoa(int(port))+originUrl, targetUrlString+originUrl)
+		SetXForwardedRemotePort(req)
+
+		AddReverseProxyLog(realIp, realPort, req.Method, host+":"+strconv.Itoa(int(port))+originUrl, targetUrlString+originUrl)
 	}
 
 	errorHandle := func(w http.ResponseWriter, r *http.Request, err error) {

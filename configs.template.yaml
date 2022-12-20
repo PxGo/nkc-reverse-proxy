@@ -5,6 +5,9 @@ console:
   error: false
   info: false
 
+proxy: false
+maxIpCount: 1
+
 servers:
   # https
   -

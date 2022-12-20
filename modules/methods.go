@@ -21,6 +21,9 @@ var serverLocation ServerLocation
 
 var configs *Configs
 
+const IpHeader = "X-Forwarded-For"
+const PortHeader = "X-Forwarded-Remote-Port"
+
 func GetConfigsPath() (string, string, error) {
 	filePath := "configs.yaml"
 	root, err := os.Getwd()
@@ -160,23 +163,61 @@ func GetServerLocation() (ServerLocation, error) {
 	return serverLocation, nil
 }
 
-func GetClientIP(r *http.Request) string {
-	xForwardedFor := r.Header.Get("X-Forwarded-For")
-	ip := strings.TrimSpace(strings.Split(xForwardedFor, ",")[0])
-	if ip != "" {
-		return ip
+func GetClientRemoteAddr(r *http.Request) (string, string) {
+	ip, port, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err != nil {
+		AddErrorLog(err)
+		return "", ""
+	} else {
+		return ip, port
+	}
+}
+
+func SetXForwardedRemotePort(r *http.Request) {
+	_, port := GetClientRemoteAddr(r)
+	xForwardedRemotePort := r.Header.Get(PortHeader)
+	if len(xForwardedRemotePort) > 0 {
+		xForwardedRemotePort += ", " + port
+	} else {
+		xForwardedRemotePort = port
+	}
+	r.Header.Set(PortHeader, xForwardedRemotePort)
+
+}
+
+func GetClientRealAddr(r *http.Request) (string, string) {
+	configs, err := GetConfigs()
+	if err != nil {
+		AddErrorLog(err)
+		return "", ""
 	}
 
-	ip = strings.TrimSpace(r.Header.Get("X-Real-Ip"))
-	if ip != "" {
-		return ip
-	}
+	var ip string
+	var port string
 
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr)); err == nil {
-		return ip
-	}
+	if configs.Proxy && configs.MaxIpCount > 0 {
+		ipsString := r.Header.Get(IpHeader)
+		ipsStringArray := strings.Split(ipsString, ",")
+		ipsCount := int16(len(ipsStringArray))
+		if ipsCount >= configs.MaxIpCount {
+			ip = ipsStringArray[ipsCount-configs.MaxIpCount]
+		} else {
+			ip = ""
+		}
 
-	return ""
+		portsString := r.Header.Get(PortHeader)
+		portsStringArray := strings.Split(portsString, ", ")
+		portsCount := int16(len(portsStringArray))
+		if portsCount >= configs.MaxIpCount {
+			port = portsStringArray[portsCount-configs.MaxIpCount]
+		} else {
+			port = ""
+		}
+	} else {
+		ip, port = GetClientRemoteAddr(r)
+	}
+	AddDebugLog("ip: " + ip + " port: " + port)
+	return ip, port
 }
 
 func GetUrlByPassType(pass []string, passType string, ip string) string {

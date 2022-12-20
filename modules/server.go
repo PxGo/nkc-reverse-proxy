@@ -27,12 +27,14 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		if redirectUrl.Path == "" {
 			redirectUrl.Path = request.URL.Path
 		}
-		AddRedirectLog(request.Method, location.RedirectCode, request.Host+request.URL.String(), redirectUrl.String())
+		ip, port := GetClientRealAddr(request)
+		AddRedirectLog(ip, port, request.Method, location.RedirectCode, request.Host+request.URL.String(), redirectUrl.String())
 		http.Redirect(writer, request, redirectUrl.String(), location.RedirectCode)
 	} else if location != nil && location.Pass != nil && len(location.Pass) > 0 {
 		handle.ReverseProxy.ServeHTTP(writer, request)
 	} else {
-		AddNotFoundError(request.Method, request.Host+request.URL.String())
+		ip, port := GetClientRealAddr(request)
+		AddNotFoundError(ip, port, request.Method, request.Host+request.URL.String())
 		pageContent, err := GetPageByStatus(http.StatusNotFound)
 		if err != nil {
 			AddErrorLog(err)

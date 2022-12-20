@@ -77,14 +77,14 @@ func AddDebugLog(content string) {
 	}
 }
 
-func AddRedirectLog(method string, code int, url string, targetUrl string) {
-	AddInfoLog("Redirect" + " " + method + " " + string(rune(code)) + " " + url + " " + targetUrl)
+func AddRedirectLog(ip string, port string, method string, code int, url string, targetUrl string) {
+	AddInfoLog("[" + ip + ":" + port + "] " + "Redirect" + " " + method + " " + string(rune(code)) + " " + url + " " + targetUrl)
 }
 
-func AddReverseProxyLog(method string, url string, targetUrl string) {
-	AddInfoLog("ReverseProxy" + " " + method + " " + url + " " + ">>>" + " " + targetUrl)
+func AddReverseProxyLog(ip string, port string, method string, url string, targetUrl string) {
+	AddInfoLog("[" + ip + ":" + port + "] " + "ReverseProxy" + " " + method + " " + url + " " + ">>>" + " " + targetUrl)
 }
 
-func AddNotFoundError(method string, url string) {
-	AddInfoLog("NotFound" + " " + method + " " + url)
+func AddNotFoundError(ip string, port string, method string, url string) {
+	AddInfoLog("[" + ip + ":" + port + "] " + "NotFound" + " " + method + " " + url)
 }

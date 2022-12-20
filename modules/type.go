@@ -12,8 +12,10 @@ type NKCHandle struct {
 }
 
 type Configs struct {
-	Servers []Server `yaml:"servers"`
-	Console Console  `yaml:"console"`
+	Servers    []Server `yaml:"servers"`
+	Console    Console  `yaml:"console"`
+	Proxy      bool     `yaml:"proxy"`
+	MaxIpCount int16    `yaml:"maxIpCount"`
 }
 
 type Console struct {
