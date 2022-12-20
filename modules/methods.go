@@ -216,7 +216,6 @@ func GetClientRealAddr(r *http.Request) (string, string) {
 	} else {
 		ip, port = GetClientRemoteAddr(r)
 	}
-	AddDebugLog("ip: " + ip + " port: " + port)
 	return ip, port
 }
 
