@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/dgryski/go-farm"
 	"github.com/go-yaml/yaml"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -283,14 +284,14 @@ func GetLogFileByLogType(logType string) (*os.File, error) {
 	return file, nil
 }
 
-func GetLoggerByLogType(logType string) (*log.Logger, *log.Logger, error) {
+func GetLoggerByLogType(logType string, loggerStd io.Writer) (*log.Logger, *log.Logger, error) {
 	file, err := GetLogFileByLogType(logType)
 	if err != nil {
 		return nil, nil, err
 	}
 	fileLogFormat := log.Ldate | log.Ltime
 	fileLogger := log.New(file, "", fileLogFormat)
-	logger := log.New(os.Stderr, "["+logType+"] ", fileLogFormat)
+	logger := log.New(loggerStd, "["+logType+"] ", fileLogFormat)
 	return fileLogger, logger, nil
 }
 

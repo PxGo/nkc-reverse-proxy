@@ -2,6 +2,7 @@ package modules
 
 import (
 	"log"
+	"os"
 )
 
 var (
@@ -31,19 +32,19 @@ func init() {
 	console.Warning = configs.Console.Warning
 	console.Error = configs.Console.Error
 
-	ErrorFileLogger, ErrorLogger, err = GetLoggerByLogType("error")
+	ErrorFileLogger, ErrorLogger, err = GetLoggerByLogType("error", os.Stderr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	InfoFileLogger, InfoLogger, err = GetLoggerByLogType("info")
+	InfoFileLogger, InfoLogger, err = GetLoggerByLogType("info", os.Stdout)
 	if err != nil {
 		log.Fatal(err)
 	}
-	WarningFileLogger, WarningLogger, err = GetLoggerByLogType("warning")
+	WarningFileLogger, WarningLogger, err = GetLoggerByLogType("warning", os.Stderr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	DebugFileLogger, DebugLogger, err = GetLoggerByLogType("debug")
+	DebugFileLogger, DebugLogger, err = GetLoggerByLogType("debug", os.Stdout)
 	if err != nil {
 		log.Fatal(err)
 	}
