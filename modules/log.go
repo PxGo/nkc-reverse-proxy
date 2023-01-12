@@ -3,6 +3,7 @@ package modules
 import (
 	"log"
 	"os"
+	"path"
 )
 
 var (
@@ -50,6 +51,24 @@ func init() {
 	}
 }
 
+func GetLogDirPath() (string, error) {
+	root, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	logDir := path.Join(root, "./logs")
+	return logDir, nil
+}
+
+func GetLogPathByLogType(logType string) (string, error) {
+	logDir, err := GetLogDirPath()
+	if err != nil {
+		return "", err
+	}
+	errorLogPath := path.Join(logDir, logType+".log")
+	return errorLogPath, nil
+}
+
 func AddErrorLog(err error) {
 	ErrorFileLogger.Println(err /*"\n", stackInfo*/)
 	if console.Error {
@@ -88,4 +107,8 @@ func AddReverseProxyLog(ip string, port string, method string, url string, targe
 
 func AddNotFoundError(ip string, port string, method string, url string) {
 	AddInfoLog("[" + ip + ":" + port + "] " + "NotFound" + " " + method + " " + url)
+}
+
+func AddServiceUnavailableError(ip string, port string, method string, url string) {
+	AddInfoLog("[" + ip + ":" + port + "] " + "ServiceUnavailable" + " " + method + " " + url)
 }

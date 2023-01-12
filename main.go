@@ -8,6 +8,22 @@ import (
 )
 
 func main() {
+	// 缓存配置文件原始数据
+	err := modules.InitGlobalConfigs()
+	if err != nil {
+		modules.AddErrorLog(err)
+		log.Fatal(err)
+		return
+	}
+	err = modules.InitGlobalServices()
+	if err != nil {
+		modules.AddErrorLog(err)
+		log.Fatal(err)
+		return
+	}
+
+	// 这里之后就是
+
 	serversPort, err := modules.GetServersPortFromConfigs()
 	if err != nil {
 		log.Fatal(err)

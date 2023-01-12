@@ -4,94 +4,19 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/dgryski/go-farm"
-	"github.com/go-yaml/yaml"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-var serverLocation ServerLocation
-
-var configs *Configs
-
 const IpHeader = "X-Forwarded-For"
 const PortHeader = "X-Forwarded-Remote-Port"
-
-func GetConfigsPath() (string, string, error) {
-	filePath := "configs.yaml"
-	root, err := os.Getwd()
-	if err != nil {
-		return "", "", err
-	}
-	if len(os.Args) > 1 {
-		filePath = os.Args[1]
-	}
-	if !path.IsAbs(filePath) {
-		filePath = path.Join(root, filePath)
-	}
-	templateFilePath := path.Join(root, "configs.template.yaml")
-	return filePath, templateFilePath, nil
-}
-
-func GetLogDirPath() (string, error) {
-	root, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	logDir := path.Join(root, "./logs")
-	return logDir, nil
-}
-
-func GetLogPathByLogType(logType string) (string, error) {
-	logDir, err := GetLogDirPath()
-	if err != nil {
-		return "", err
-	}
-	errorLogPath := path.Join(logDir, logType+".log")
-	return errorLogPath, nil
-}
-
-func GetConfigs() (*Configs, error) {
-	if configs != nil {
-		return configs, nil
-	}
-	configFilePath, templateConfigFilePath, err := GetConfigsPath()
-	if err != nil {
-		return nil, err
-	}
-	file, err := os.ReadFile(configFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			templateFile, err := ioutil.ReadFile(templateConfigFilePath)
-			if err != nil {
-				return nil, err
-			}
-			err = ioutil.WriteFile(configFilePath, templateFile, 0644)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-		file, err = os.ReadFile(configFilePath)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err = yaml.Unmarshal(file, &configs)
-	if err != nil {
-		return nil, err
-	}
-	return configs, nil
-}
 
 func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
 	configs, err := GetConfigs()
@@ -138,30 +63,6 @@ func GetTLSConfig() (*tls.Config, error) {
 		cfg.Certificates = append(cfg.Certificates, cert)
 	}
 	return &cfg, nil
-}
-
-func GetServerLocation() (ServerLocation, error) {
-	if serverLocation != nil {
-		return serverLocation, nil
-	}
-	serverLocation = make(ServerLocation)
-	configs, err := GetConfigs()
-	if err != nil {
-		return nil, err
-	}
-	for _, server := range configs.Servers {
-		if serverLocation[server.Listen] == nil {
-			serverLocation[server.Listen] = make(NameLocation)
-		}
-		for _, name := range server.Name {
-			if serverLocation[server.Listen][name] == nil {
-				serverLocation[server.Listen][name] = server.Location
-			} else {
-				return nil, errors.New("端口或域名重复")
-			}
-		}
-	}
-	return serverLocation, nil
 }
 
 func GetClientRemoteAddr(r *http.Request) (string, string) {
@@ -245,31 +146,27 @@ func GetRequestAddr(host string) (string, error) {
 	return host, nil
 }
 
-func GetTargetLocation(host string, port uint16, url string) (*Location, error) {
-	serverLocation, err := GetServerLocation()
-	if err != nil {
-		return nil, err
-	}
-	if serverLocation[port] == nil ||
-		serverLocation[port][host] == nil ||
-		len(serverLocation[port][host]) == 0 {
+func GetTargetService(host string, port uint16, url string) (*IService, error) {
+	if GlobalServices[port] == nil ||
+		GlobalServices[port][host] == nil ||
+		len(GlobalServices[port][host]) == 0 {
 		return nil, nil
 	}
-	locations := serverLocation[port][host]
-	var targetLocation *Location
-	for i := len(locations) - 1; i >= 0; i-- {
-		location := locations[i]
+	services := GlobalServices[port][host]
+	var targetService *IService
+	for i := len(services) - 1; i >= 0; i-- {
+		location := services[i].Location
 		regString := location.Reg
 		matched, err := regexp.MatchString(regString, url)
 		if err != nil {
 			return nil, err
 		}
 		if matched {
-			targetLocation = &location
+			targetService = &services[i]
 			break
 		}
 	}
-	return targetLocation, nil
+	return targetService, nil
 }
 
 func GetLogFileByLogType(logType string) (*os.File, error) {
@@ -336,4 +233,62 @@ func InitLogDir() {
 	if createDirError != nil {
 		log.Fatal(createDirError)
 	}
+}
+
+func GetReqLimitByString(reqLimit []string) ([]IReqLimit, error) {
+	var reqLimitArr []IReqLimit
+	for _, item := range reqLimit {
+		println("item: " + item)
+		parameterError := errors.New("req_limit parameter error. req_limit=" + item)
+		args := strings.Split(item, " ")
+		argsLength := len(args)
+		if argsLength < 2 || argsLength > 3 {
+			return nil, parameterError
+		}
+		cacheNumberInt, err := strconv.Atoi(args[1])
+		if err != nil {
+			return nil, parameterError
+		}
+		CacheNumberUint64 := uint64(cacheNumberInt)
+
+		reqLimitType := ReqLimitTypeStatic
+		if len(args) > 1 && strings.TrimSpace(args[1]) == "ip" {
+			reqLimitType = ReqLimitTypeIp
+		}
+		reqLimitTypeArr := strings.Split(strings.TrimSpace(args[0]), "/")
+		if len(reqLimitTypeArr) != 2 {
+			return nil, parameterError
+		}
+		countPerTimeInt, err := strconv.Atoi(reqLimitTypeArr[0])
+		if err != nil {
+			return nil, err
+		}
+		countPerTimeUint64 := uint64(countPerTimeInt)
+		var timeNumber uint64 = 0
+		switch reqLimitTypeArr[1] {
+		case "s":
+			timeNumber = 1000
+		case "m":
+			timeNumber = 60 * 1000
+		case "h":
+			timeNumber = 60 * 60 * 1000
+		case "d":
+			timeNumber = 24 * 60 * 60 * 1000
+		}
+		code := GetNewReqLimitCode()
+		reqLimit := IReqLimit{
+			Code:         code,
+			Type:         reqLimitType,
+			Time:         timeNumber,
+			CountPerTime: countPerTimeUint64,
+			CacheNumber:  CacheNumberUint64,
+			Caches:       make(ICaches),
+		}
+		reqLimitArr = append(reqLimitArr, reqLimit)
+		err = CacheCodeReqLimit(code, &reqLimit)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return reqLimitArr, nil
 }

@@ -2,51 +2,129 @@ package modules
 
 import (
 	"crypto/tls"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"strconv"
 )
 
+type ServerPort struct {
+	Port      uint16
+	TLSConfig *tls.Config
+}
+
+type NKCHandle struct {
+	IsHTTPS      bool
+	Port         uint16
+	ReverseProxy *httputil.ReverseProxy
+}
+
 func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	ip, port := GetClientRealAddr(request)
+
 	// 获取请求的域、端口以及路径
 	host, err := GetRequestAddr(request.Host)
-	location, err := GetTargetLocation(host, handle.Port, request.URL.String())
 	if err != nil {
 		AddErrorLog(err)
+		err := WriteResponsePage(writer, http.StatusInternalServerError)
+		if err != nil {
+			AddErrorLog(err)
+		}
 		return
 	}
-	if location != nil && location.RedirectUrl != "" && location.RedirectCode != 0 {
-		// 重定向
-		redirectUrl, err := url.Parse(location.RedirectUrl)
-		if err != nil {
-			AddErrorLog(err)
-			return
-		}
-		if redirectUrl.Path == "" {
-			redirectUrl.Path = request.URL.Path
-		}
-		ip, port := GetClientRealAddr(request)
-		AddRedirectLog(ip, port, request.Method, location.RedirectCode, request.Host+request.URL.String(), redirectUrl.String())
-		http.Redirect(writer, request, redirectUrl.String(), location.RedirectCode)
-	} else if location != nil && location.Pass != nil && len(location.Pass) > 0 {
-		handle.ReverseProxy.ServeHTTP(writer, request)
-	} else {
-		ip, port := GetClientRealAddr(request)
+
+	service, err := GetTargetService(host, handle.Port, request.URL.String())
+
+	if service == nil {
+		// 不存在匹配的服务
+		// 返回404
 		AddNotFoundError(ip, port, request.Method, request.Host+request.URL.String())
-		pageContent, err := GetPageByStatus(http.StatusNotFound)
+		err := WriteResponsePage(writer, http.StatusNotFound)
 		if err != nil {
 			AddErrorLog(err)
-			return
 		}
-		writer.WriteHeader(http.StatusNotFound)
-		_, err = writer.Write(pageContent)
-		if err != nil {
-			AddErrorLog(err)
-			return
-		}
+		return
 	}
+
+	if service.Location.Pass == nil || len(service.Location.Pass) == 0 {
+		// 目标服务为空
+		AddServiceUnavailableError(ip, port, request.Method, request.Host+request.URL.String())
+		err := WriteResponsePage(writer, http.StatusServiceUnavailable)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
+	// 存在匹配的服务
+
+	limited := ReqLimitChecker(service.Global.ReqLimit, ip)
+	if limited {
+		AddErrorLog(errors.New("global req limit: too Many Request"))
+		err := WriteResponsePage(writer, http.StatusTooManyRequests)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
+	limited = ReqLimitChecker(service.Server.ReqLimit, ip)
+	if limited {
+		AddErrorLog(errors.New("global req limit: too Many Request"))
+		err := WriteResponsePage(writer, http.StatusTooManyRequests)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
+	limited = ReqLimitChecker(service.Location.ReqLimit, ip)
+	if limited {
+		AddErrorLog(errors.New("global req limit: too Many Request"))
+		err := WriteResponsePage(writer, http.StatusTooManyRequests)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
+	handle.ReverseProxy.ServeHTTP(writer, request)
+
+	/*
+
+		locationDetail := serviceDetail.Location
+
+		serverDetail := serviceDetail.Server
+
+		if service.Location.RedirectUrl != "" && service.Location.RedirectCode != 0 {
+			// 重定向
+			redirectUrl, err := url.Parse(service.Location.RedirectUrl)
+			if err != nil {
+				AddErrorLog(err)
+				return
+			}
+			if redirectUrl.Path == "" {
+				redirectUrl.Path = request.URL.Path
+			}
+			AddRedirectLog(ip, port, request.Method, service.Location.RedirectCode, request.Host+request.URL.String(), redirectUrl.String())
+			http.Redirect(writer, request, redirectUrl.String(), service.Location.RedirectCode)
+		} else if serviceDetail != nil && locationDetail.Pass != nil && len(locationDetail.Pass) > 0 {
+			handle.ReverseProxy.ServeHTTP(writer, request)
+		} else {
+			AddNotFoundError(ip, port, request.Method, request.Host+request.URL.String())
+			pageContent, err := GetPageByStatus(http.StatusNotFound)
+			if err != nil {
+				AddErrorLog(err)
+				return
+			}
+			writer.WriteHeader(http.StatusNotFound)
+			_, err = writer.Write(pageContent)
+			if err != nil {
+				AddErrorLog(err)
+				return
+			}
+		}*/
 }
 
 func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg *tls.Config) (*http.Server, error) {
