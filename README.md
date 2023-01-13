@@ -2,8 +2,6 @@
 <h4 align="center" style="align-content: center">一个简单易用的反向代理服务</h4>
 
 
----
-
 ## 目录
 + [安装](#install)
 + [配置说明](#configs)
