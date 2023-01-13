@@ -1,6 +1,6 @@
-# <center>nkc-reverse-proxy</center> 
+<h1 align="center" style="align-content: center">nkc-reverse-proxy</h1> 
+<h4 align="center" style="align-content: center">一个简单易用的反向代理服务</h4>
 
-#### <center>一个简单易用的反向代理服务</center>
 
 ---
 
@@ -119,7 +119,7 @@ servers:
 
 以上就是 `servers` 中可能出现的配置选项，下面是一些例子。
 
-#### <span id="configs_servers_http">1、HTTP 网站配置</span>
+<span id="configs_servers_http">1、HTTP 网站配置</span>
 
 ```
 servers:
@@ -141,7 +141,7 @@ servers:
           - "3/s 10 ip"
 ```
 
-#### <span id="configs_servers_https">2、HTTPS 网站配置</span>
+<span id="configs_servers_https">2、HTTPS 网站配置</span>
 
 ```
 servers:
