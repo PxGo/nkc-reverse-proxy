@@ -43,7 +43,7 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 		ip, port := GetClientRealAddr(r)
 		AddErrorLog(err)
 		AddServiceUnavailableError(ip, port, r.Method, r.URL.String())
-		err = WriteResponsePage(w, http.StatusServiceUnavailable)
+		err = WriteResponse(r, w, http.StatusServiceUnavailable)
 		if err != nil {
 			AddErrorLog(err)
 		}

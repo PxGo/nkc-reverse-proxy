@@ -21,13 +21,15 @@ type NKCHandle struct {
 }
 
 func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+
 	ip, port := GetClientRealAddr(request)
 
 	// 获取请求的域、端口以及路径
 	host, err := GetRequestAddr(request.Host)
+
 	if err != nil {
 		AddErrorLog(err)
-		err := WriteResponsePage(writer, http.StatusInternalServerError)
+		err := WriteResponse(request, writer, http.StatusInternalServerError)
 		if err != nil {
 			AddErrorLog(err)
 		}
@@ -40,7 +42,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		// 不存在匹配的服务
 		// 返回404
 		AddNotFoundError(ip, port, request.Method, request.Host+request.URL.String())
-		err := WriteResponsePage(writer, http.StatusNotFound)
+		err := WriteResponse(request, writer, http.StatusNotFound)
 		if err != nil {
 			AddErrorLog(err)
 		}
@@ -50,7 +52,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	if service.Location.Pass == nil || len(service.Location.Pass) == 0 {
 		// 目标服务为空
 		AddServiceUnavailableError(ip, port, request.Method, request.Host+request.URL.String())
-		err := WriteResponsePage(writer, http.StatusServiceUnavailable)
+		err := WriteResponse(request, writer, http.StatusServiceUnavailable)
 		if err != nil {
 			AddErrorLog(err)
 		}
@@ -62,7 +64,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	limited := ReqLimitChecker(service.Global.ReqLimit, ip)
 	if limited {
 		AddErrorLog(errors.New("global req limit: too Many Request"))
-		err := WriteResponsePage(writer, http.StatusTooManyRequests)
+		err := WriteResponse(request, writer, http.StatusTooManyRequests)
 		if err != nil {
 			AddErrorLog(err)
 		}
@@ -72,7 +74,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	limited = ReqLimitChecker(service.Server.ReqLimit, ip)
 	if limited {
 		AddErrorLog(errors.New("global req limit: too Many Request"))
-		err := WriteResponsePage(writer, http.StatusTooManyRequests)
+		err := WriteResponse(request, writer, http.StatusTooManyRequests)
 		if err != nil {
 			AddErrorLog(err)
 		}
@@ -82,7 +84,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	limited = ReqLimitChecker(service.Location.ReqLimit, ip)
 	if limited {
 		AddErrorLog(errors.New("global req limit: too Many Request"))
-		err := WriteResponsePage(writer, http.StatusTooManyRequests)
+		err := WriteResponse(request, writer, http.StatusTooManyRequests)
 		if err != nil {
 			AddErrorLog(err)
 		}
@@ -90,41 +92,6 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	}
 
 	handle.ReverseProxy.ServeHTTP(writer, request)
-
-	/*
-
-		locationDetail := serviceDetail.Location
-
-		serverDetail := serviceDetail.Server
-
-		if service.Location.RedirectUrl != "" && service.Location.RedirectCode != 0 {
-			// 重定向
-			redirectUrl, err := url.Parse(service.Location.RedirectUrl)
-			if err != nil {
-				AddErrorLog(err)
-				return
-			}
-			if redirectUrl.Path == "" {
-				redirectUrl.Path = request.URL.Path
-			}
-			AddRedirectLog(ip, port, request.Method, service.Location.RedirectCode, request.Host+request.URL.String(), redirectUrl.String())
-			http.Redirect(writer, request, redirectUrl.String(), service.Location.RedirectCode)
-		} else if serviceDetail != nil && locationDetail.Pass != nil && len(locationDetail.Pass) > 0 {
-			handle.ReverseProxy.ServeHTTP(writer, request)
-		} else {
-			AddNotFoundError(ip, port, request.Method, request.Host+request.URL.String())
-			pageContent, err := GetPageByStatus(http.StatusNotFound)
-			if err != nil {
-				AddErrorLog(err)
-				return
-			}
-			writer.WriteHeader(http.StatusNotFound)
-			_, err = writer.Write(pageContent)
-			if err != nil {
-				AddErrorLog(err)
-				return
-			}
-		}*/
 }
 
 func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg *tls.Config) (*http.Server, error) {

@@ -238,7 +238,6 @@ func InitLogDir() {
 func GetReqLimitByString(reqLimit []string) ([]IReqLimit, error) {
 	var reqLimitArr []IReqLimit
 	for _, item := range reqLimit {
-		println("item: " + item)
 		parameterError := errors.New("req_limit parameter error. req_limit=" + item)
 		args := strings.Split(item, " ")
 		argsLength := len(args)
@@ -252,7 +251,7 @@ func GetReqLimitByString(reqLimit []string) ([]IReqLimit, error) {
 		CacheNumberUint64 := uint64(cacheNumberInt)
 
 		reqLimitType := ReqLimitTypeStatic
-		if len(args) > 1 && strings.TrimSpace(args[1]) == "ip" {
+		if len(args) > 2 && strings.TrimSpace(args[2]) == "ip" {
 			reqLimitType = ReqLimitTypeIp
 		}
 		reqLimitTypeArr := strings.Split(strings.TrimSpace(args[0]), "/")
@@ -275,20 +274,17 @@ func GetReqLimitByString(reqLimit []string) ([]IReqLimit, error) {
 		case "d":
 			timeNumber = 24 * 60 * 60 * 1000
 		}
-		code := GetNewReqLimitCode()
+		iChan := CreateReqLimitChan()
 		reqLimit := IReqLimit{
-			Code:         code,
 			Type:         reqLimitType,
 			Time:         timeNumber,
 			CountPerTime: countPerTimeUint64,
 			CacheNumber:  CacheNumberUint64,
+			Chan:         iChan,
 			Caches:       make(ICaches),
 		}
+		RunReqLimitBroker(&reqLimit)
 		reqLimitArr = append(reqLimitArr, reqLimit)
-		err = CacheCodeReqLimit(code, &reqLimit)
-		if err != nil {
-			return nil, err
-		}
 	}
 	return reqLimitArr, nil
 }

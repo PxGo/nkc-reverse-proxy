@@ -23,39 +23,42 @@ type IPortHostServices map[uint16]IHostService
 
 type IReqLimitType string
 type IReqLimitChanData struct {
-	LockChan ICacheLockChan
-	ReqLimit *IReqLimit
-	Cache    *ICache
+	LockChan IReqLimitLockChan
+	Key      string
 }
 
 type ICacheChanData struct {
 	Cache    *ICache
 	ReqLimit IReqLimit
-	LockChan ICacheLockChan
+	LockChan IReqLimitLockChan
 }
 
 type IReqLimitChan chan IReqLimitChanData
-type ICacheChan chan ICacheLockChan
+type ICacheChan chan IReqLimitLockChan
 
-type ICacheLockChan chan int
+type IReqLimitLockChan chan bool
 
 type ICache struct {
 	Time         time.Time
 	Count        uint64
-	Chan         ICacheChan
-	CountPerTime uint64
-	TimePerStage uint64
 	WaitingCount uint64
+	Chan         ICacheCheckerCoreChan
 }
+
+type ICacheCheckerCoreChanData struct {
+	Cache    *ICache
+	LockChan IReqLimitLockChan
+}
+type ICacheCheckerCoreChan chan ICacheCheckerCoreChanData
 
 type ICaches map[string]*ICache
 
 type IReqLimit struct {
-	Code         IReqLimitCode
 	Type         IReqLimitType
 	Time         uint64
 	CountPerTime uint64
 	CacheNumber  uint64
+	Chan         IReqLimitChan
 	Caches       ICaches
 }
 
@@ -88,9 +91,6 @@ type IGlobal struct {
 func InitGlobalServices() error {
 	if GlobalServices == nil {
 		GlobalServices = make(IPortHostServices)
-	}
-	if GlobalCodeReqLimit == nil {
-		GlobalCodeReqLimit = make(ICodeReqLimit)
 	}
 	var err error
 	GlobalReqLimit, err = GetReqLimitByString(GlobalConfigs.ReqLimit)
