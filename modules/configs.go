@@ -25,7 +25,6 @@ type Console struct {
 }
 
 type Server struct {
-	Id       string     `yaml:"id"`
 	Listen   uint16     `yaml:"listen"`
 	Name     []string   `yaml:"name"`
 	SSLKey   string     `yaml:"ssl_key"`

@@ -1,4 +1,3 @@
-# 控制台打印
 console:
   debug: false
   warning: false
@@ -9,72 +8,14 @@ proxy: false
 maxIpCount: 1
 
 servers:
-  # https
   -
-    # 名称
-    id: "NKC HTTPS"
-    # 端口
-    listen: 443
-    # 接受的域名
-    name:
-      - www.kechuang.org
-    # ssl
-    ssl_key: "/SSL/www.kechuang.org.key"
-    ssl_cert: "/SSL/www.kechuang.org.crt"
-    # 路径匹配
-    location:
-      -
-        # 路径匹配正则
-        reg: "^\\/"
-        # 反向代理目标服务
-        pass:
-          - http://127.0.0.1:9000
-          - http://127.0.0.1:9001
-          - http://127.0.0.1:9002
-          - http://127.0.0.1:9003
-        # 负载均衡策略 random（随机）,ip_hash（客户端 IP）
-        balance: random
-        # 访问速率限制
-        # 5/s 表示一秒钟最多处理 5 个请求，另外还可以写成 100/m, 5000/h, 100000/d
-        # 30 表示最多缓存 30 个请求，多余的请求将会被拒绝
-        # ip 表示根据请求者的 IP 来进行以上的限制，可为空
-        req_limit: ["5/s 30 ip"]
-      -
-        # resource
-        # attachment
-        # sticker
-        # twemoji
-        reg: "^\\/(a|r|sticker|twemoji)\\/"
-        pass:
-          - http://127.0.0.1:9000
-          - http://127.0.0.1:9001
-          - http://127.0.0.1:9002
-          - http://127.0.0.1:9003
-        balance: random
-        req_limit: ["200/s 500 ip"]
-      -
-        # 静态资源
-        reg: "\\.(js|css|wav|woff2|png|jpg|jpeg|gif|txt)+(\\?v=[0-9]+)?"
-        pass:
-          - http://127.0.0.1:1086
-        balance: random
-        req_limit: ["200/s 500 ip"]
-      -
-        # websocket
-        reg: "^\\/socket.io\\/"
-        pass:
-          - http://127.0.0.1:10101
-        balance: random
-        req_limit: ["1/s 5 ip"]
-
-  # http 跳转到 https
-  -
-    id: "NKC HTTP REDIRECT"
     listen: 80
     name:
-      - www.kechuang.org
+      - location
+      - 127.0.0.1
     location:
       -
         reg: "^\\/"
-        redirect_code: 301
-        redirect_url: "https://www.kechuang.org"
+        pass:
+          - http://127.0.0.1:8080
+        balance: random
