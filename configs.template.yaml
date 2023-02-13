@@ -11,7 +11,7 @@ servers:
   -
     listen: 80
     name:
-      - location
+      - localhost
       - 127.0.0.1
     location:
       -
