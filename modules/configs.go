@@ -2,7 +2,6 @@ package modules
 
 import (
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -76,11 +75,11 @@ func GetConfigs() (*Configs, error) {
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			templateFile, err := ioutil.ReadFile(templateConfigFilePath)
+			templateFile, err := os.ReadFile(templateConfigFilePath)
 			if err != nil {
 				return nil, err
 			}
-			err = ioutil.WriteFile(configFilePath, templateFile, 0644)
+			err = os.WriteFile(configFilePath, templateFile, 0644)
 			if err != nil {
 				return nil, err
 			}
