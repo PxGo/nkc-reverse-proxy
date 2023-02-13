@@ -18,9 +18,16 @@
 ```
 $ git clone https://github.com/kccd/nkc-reverse-proxy.git
 $ cd nkc-reverse-proxy
-$ go build .
 $ copy configs.template.yaml configs.yaml
 
+# 运行已编译版本
+# windows amd64
+./build/app-windows-amd64.exe
+# linux amd64
+./build/app-linux-amd64
+
+# 从源码编译并运行
+$ go build .
 # windows
 $ ./nkc-reverse-proxy.exe
 # linux
