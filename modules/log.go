@@ -1,23 +1,143 @@
 package modules
 
 import (
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
+	"time"
 )
 
-var (
-	ErrorFileLogger   *log.Logger
-	ErrorLogger       *log.Logger
-	InfoFileLogger    *log.Logger
-	InfoLogger        *log.Logger
-	WarningFileLogger *log.Logger
-	WarningLogger     *log.Logger
-	DebugFileLogger   *log.Logger
-	DebugLogger       *log.Logger
+type ILoggerType string
+type ILoggerContent struct {
+	fileLogger    *log.Logger
+	consoleLogger *log.Logger
+	file          *os.File
+}
+type ILoggers map[ILoggerType]*ILoggerContent
+
+type ILoggerChanData struct {
+	logType ILoggerType
+	content string
+}
+type ILoggerChan chan ILoggerChanData
+
+type IConsole map[ILoggerType]bool
+
+const (
+	LoggerTypeError ILoggerType = "error"
+	LoggerTypeInfo  ILoggerType = "info"
+	LoggerTypeDebug ILoggerType = "debug"
+	LoggerTypeWarn  ILoggerType = "warn"
 )
 
-var console Console
+type Logger struct {
+	date    string
+	loggers ILoggers
+	logChan ILoggerChan
+	console IConsole
+}
+
+func (logger *Logger) createLogger(logType ILoggerType, date string, loggerStd io.Writer) (*log.Logger, *log.Logger, *os.File, error) {
+	logFilePath, err := GetLogPathByLogType(logType, date)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	fileLogFormat := log.Ldate | log.Ltime
+	fileLogger := log.New(file, "", fileLogFormat)
+	consoleLogger := log.New(loggerStd, "["+string(logType)+"] ", fileLogFormat)
+	return consoleLogger, fileLogger, file, nil
+}
+
+func (logger *Logger) initLoggers(date string) error {
+	loggers := make(ILoggers)
+	logTypes := []ILoggerType{LoggerTypeError, LoggerTypeDebug, LoggerTypeWarn, LoggerTypeInfo}
+	for _, logType := range logTypes {
+		var console io.Writer = os.Stdout
+		if logType == LoggerTypeError {
+			console = os.Stderr
+		}
+		consoleLogger, fileLogger, file, err := logger.createLogger(logType, date, console)
+		if err != nil {
+			return err
+		}
+		if logger.loggers[logType] != nil {
+			err := logger.loggers[logType].file.Close()
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		loggers[logType] = &ILoggerContent{
+			consoleLogger: consoleLogger,
+			fileLogger:    fileLogger,
+			file:          file,
+		}
+	}
+	logger.date = date
+	logger.loggers = loggers
+	return nil
+}
+
+func (logger *Logger) getLoggerByType(logType ILoggerType) (*ILoggerContent, error) {
+	date := time.Now().Format("2006-01-02")
+	if logger.date != date {
+		err := logger.initLoggers(date)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return logger.loggers[logType], nil
+}
+
+func (logger *Logger) Println(logType ILoggerType, content string) {
+	loggerContent, err := logger.getLoggerByType(logType)
+	if err != nil {
+		fmt.Println(content)
+		fmt.Println(err)
+		return
+	}
+	consoleConfig := logger.console
+	if !consoleConfig[logType] {
+		loggerContent.consoleLogger.Println(content)
+	}
+	loggerContent.fileLogger.Println(content)
+}
+
+func (logger *Logger) InfoLog(content string) {
+	logger.logChan <- ILoggerChanData{
+		logType: LoggerTypeInfo,
+		content: content,
+	}
+}
+
+func (logger *Logger) ErrorLog(content string) {
+	logger.logChan <- ILoggerChanData{
+		logType: LoggerTypeError,
+		content: content,
+	}
+}
+
+func (logger *Logger) WarnLog(content string) {
+	logger.logChan <- ILoggerChanData{
+		logType: LoggerTypeWarn,
+		content: content,
+	}
+}
+
+func (logger *Logger) DebugLog(content string) {
+	logger.logChan <- ILoggerChanData{
+		logType: LoggerTypeDebug,
+		content: content,
+	}
+}
+
+var logger Logger
 
 func init() {
 
@@ -27,28 +147,23 @@ func init() {
 	}
 
 	InitLogDir()
-
-	console.Debug = configs.Console.Debug
-	console.Info = configs.Console.Info
-	console.Warning = configs.Console.Warning
-	console.Error = configs.Console.Error
-
-	ErrorFileLogger, ErrorLogger, err = GetLoggerByLogType("error", os.Stderr)
-	if err != nil {
-		log.Fatal(err)
+	logger = Logger{
+		date:    "",
+		loggers: make(ILoggers),
+		logChan: make(ILoggerChan),
+		console: IConsole{
+			LoggerTypeWarn:  configs.Console.Warning,
+			LoggerTypeError: configs.Console.Error,
+			LoggerTypeDebug: configs.Console.Debug,
+			LoggerTypeInfo:  configs.Console.Info,
+		},
 	}
-	InfoFileLogger, InfoLogger, err = GetLoggerByLogType("info", os.Stdout)
-	if err != nil {
-		log.Fatal(err)
-	}
-	WarningFileLogger, WarningLogger, err = GetLoggerByLogType("warning", os.Stderr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	DebugFileLogger, DebugLogger, err = GetLoggerByLogType("debug", os.Stdout)
-	if err != nil {
-		log.Fatal(err)
-	}
+	go func(logger *Logger) {
+		for {
+			data := <-logger.logChan
+			logger.Println(data.logType, data.content)
+		}
+	}(&logger)
 }
 
 func GetLogDirPath() (string, error) {
@@ -60,41 +175,29 @@ func GetLogDirPath() (string, error) {
 	return logDir, nil
 }
 
-func GetLogPathByLogType(logType string) (string, error) {
+func GetLogPathByLogType(logType ILoggerType, date string) (string, error) {
 	logDir, err := GetLogDirPath()
 	if err != nil {
 		return "", err
 	}
-	errorLogPath := path.Join(logDir, logType+".log")
+	errorLogPath := path.Join(logDir, date+"."+string(logType)+".log")
 	return errorLogPath, nil
 }
 
 func AddErrorLog(err error) {
-	ErrorFileLogger.Println(err /*"\n", stackInfo*/)
-	if console.Error {
-		ErrorLogger.Println(err /*"\n", stackInfo*/)
-	}
+	logger.ErrorLog(err.Error() /*"\n", stackInfo*/)
 }
 
 func AddInfoLog(content string) {
-	InfoFileLogger.Println(content)
-	if console.Info {
-		InfoLogger.Println(content)
-	}
+	logger.InfoLog(content)
 }
 
 func AddWarningLog(content string) {
-	WarningFileLogger.Println(content)
-	if console.Warning {
-		WarningLogger.Println(content)
-	}
+	logger.WarnLog(content)
 }
 
 func AddDebugLog(content string) {
-	DebugFileLogger.Println(content)
-	if console.Debug {
-		DebugLogger.Println(content)
-	}
+	logger.DebugLog(content)
 }
 
 func AddRedirectLog(ip string, port string, method string, code int, url string, targetUrl string) {
@@ -111,4 +214,9 @@ func AddNotFoundError(ip string, port string, method string, url string) {
 
 func AddServiceUnavailableError(ip string, port string, method string, url string) {
 	AddInfoLog("[" + ip + ":" + port + "] " + "ServiceUnavailable" + " " + method + " " + url)
+}
+
+func AddReqLimitInfo(ip string, port string, method string, url string, reqLimitType string) {
+	content := fmt.Sprintf("[%s:%s] TooManyRequest %s %s %s", ip, port, reqLimitType, method, url)
+	AddInfoLog(content)
 }

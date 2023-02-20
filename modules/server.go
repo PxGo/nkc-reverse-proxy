@@ -79,7 +79,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 	limited := ReqLimitChecker(service.Global.ReqLimit, ip)
 	if limited {
-		AddErrorLog(errors.New("global req limit: too Many Request"))
+		AddReqLimitInfo(ip, port, request.Method, request.URL.String(), "Global")
 		err := WriteResponse(request, writer, http.StatusTooManyRequests)
 		if err != nil {
 			AddErrorLog(err)
@@ -89,7 +89,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 	limited = ReqLimitChecker(service.Server.ReqLimit, ip)
 	if limited {
-		AddErrorLog(errors.New("server req limit: too Many Request"))
+		AddReqLimitInfo(ip, port, request.Method, request.URL.String(), "Server")
 		err := WriteResponse(request, writer, http.StatusTooManyRequests)
 		if err != nil {
 			AddErrorLog(err)
@@ -99,7 +99,7 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 	limited = ReqLimitChecker(service.Location.ReqLimit, ip)
 	if limited {
-		AddErrorLog(errors.New("location req limit: too Many Request"))
+		AddReqLimitInfo(ip, port, request.Method, request.URL.String(), "Location")
 		err := WriteResponse(request, writer, http.StatusTooManyRequests)
 		if err != nil {
 			AddErrorLog(err)

@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/dgryski/go-farm"
-	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -167,29 +166,6 @@ func GetTargetService(host string, port uint16, url string) (*IService, error) {
 		}
 	}
 	return targetService, nil
-}
-
-func GetLogFileByLogType(logType string) (*os.File, error) {
-	fileLogPath, err := GetLogPathByLogType(logType)
-	if err != nil {
-		return nil, err
-	}
-	file, err := os.OpenFile(fileLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
-}
-
-func GetLoggerByLogType(logType string, loggerStd io.Writer) (*log.Logger, *log.Logger, error) {
-	file, err := GetLogFileByLogType(logType)
-	if err != nil {
-		return nil, nil, err
-	}
-	fileLogFormat := log.Ldate | log.Ltime
-	fileLogger := log.New(file, "", fileLogFormat)
-	logger := log.New(loggerStd, "["+logType+"] ", fileLogFormat)
-	return fileLogger, logger, nil
 }
 
 func PathExists(path string) (bool, error) {
