@@ -103,38 +103,35 @@ func (logger *Logger) Println(logType ILoggerType, content string) {
 		return
 	}
 	consoleConfig := logger.console
-	if !consoleConfig[logType] {
+	if consoleConfig[logType] {
 		loggerContent.consoleLogger.Println(content)
 	}
 	loggerContent.fileLogger.Println(content)
 }
 
+func (logger *Logger) SendLogData(logType ILoggerType, content string) {
+	go func(logType ILoggerType, content string) {
+		logger.logChan <- ILoggerChanData{
+			logType: logType,
+			content: content,
+		}
+	}(logType, content)
+}
+
 func (logger *Logger) InfoLog(content string) {
-	logger.logChan <- ILoggerChanData{
-		logType: LoggerTypeInfo,
-		content: content,
-	}
+	logger.SendLogData(LoggerTypeInfo, content)
 }
 
 func (logger *Logger) ErrorLog(content string) {
-	logger.logChan <- ILoggerChanData{
-		logType: LoggerTypeError,
-		content: content,
-	}
+	logger.SendLogData(LoggerTypeError, content)
 }
 
 func (logger *Logger) WarnLog(content string) {
-	logger.logChan <- ILoggerChanData{
-		logType: LoggerTypeWarn,
-		content: content,
-	}
+	logger.SendLogData(LoggerTypeWarn, content)
 }
 
 func (logger *Logger) DebugLog(content string) {
-	logger.logChan <- ILoggerChanData{
-		logType: LoggerTypeDebug,
-		content: content,
-	}
+	logger.SendLogData(LoggerTypeDebug, content)
 }
 
 var logger Logger
@@ -192,28 +189,32 @@ func AddInfoLog(content string) {
 	logger.InfoLog(content)
 }
 
-func AddWarningLog(content string) {
+/*func AddWarningLog(content string) {
 	logger.WarnLog(content)
 }
 
 func AddDebugLog(content string) {
 	logger.DebugLog(content)
-}
+}*/
 
 func AddRedirectLog(ip string, port string, method string, code int, url string, targetUrl string) {
-	AddInfoLog("[" + ip + ":" + port + "] " + "Redirect" + " " + method + " " + string(rune(code)) + " " + url + " " + targetUrl)
+	content := fmt.Sprintf("[%s:%s] Redirect %s %s %s %s", ip, port, method, string(rune(code)), url, targetUrl)
+	AddInfoLog(content)
 }
 
 func AddReverseProxyLog(ip string, port string, method string, url string, targetUrl string) {
-	AddInfoLog("[" + ip + ":" + port + "] " + "ReverseProxy" + " " + method + " " + url + " " + ">>>" + " " + targetUrl)
+	content := fmt.Sprintf("[%s:%s] ReverseProxy %s %s >>> %s", ip, port, method, url, targetUrl)
+	AddInfoLog(content)
 }
 
 func AddNotFoundError(ip string, port string, method string, url string) {
-	AddInfoLog("[" + ip + ":" + port + "] " + "NotFound" + " " + method + " " + url)
+	content := fmt.Sprintf("[%s:%s] NotFound %s %s", ip, port, method, url)
+	AddInfoLog(content)
 }
 
 func AddServiceUnavailableError(ip string, port string, method string, url string) {
-	AddInfoLog("[" + ip + ":" + port + "] " + "ServiceUnavailable" + " " + method + " " + url)
+	content := fmt.Sprintf("[%s:%s] ServiceUnavailable %s %s", ip, port, method, url)
+	AddInfoLog(content)
 }
 
 func AddReqLimitInfo(ip string, port string, method string, url string, reqLimitType string) {
