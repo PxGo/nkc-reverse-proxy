@@ -2,6 +2,7 @@ package modules
 
 import (
 	"errors"
+	"sync"
 	"time"
 )
 
@@ -11,7 +12,7 @@ const (
 )
 
 var GlobalServices IPortHostServices
-var GlobalReqLimit []IReqLimit
+var GlobalReqLimit []*IReqLimit
 
 type IService struct {
 	Server   IServer
@@ -39,10 +40,19 @@ type ICacheChan chan IReqLimitLockChan
 type IReqLimitLockChan chan bool
 
 type ICache struct {
+	Lock         *sync.Mutex
+	LoopLock     *sync.Mutex
+	Cond         *sync.Cond
 	Time         time.Time
 	Count        uint64
 	WaitingCount uint64
-	Chan         ICacheCheckerCoreChan
+	LockChanArr  []IReqLimitLockChan
+	MarkClear    bool
+}
+
+func (own *ICache) ClearGoroutine() {
+	own.MarkClear = true
+	own.Cond.Broadcast()
 }
 
 type ICacheCheckerCoreChanData struct {
@@ -54,19 +64,23 @@ type ICacheCheckerCoreChan chan ICacheCheckerCoreChanData
 type ICaches map[string]*ICache
 
 type IReqLimit struct {
+	Mu           sync.Mutex
 	Type         IReqLimitType
 	Time         uint64
 	CountPerTime uint64
 	CacheNumber  uint64
-	Chan         IReqLimitChan
 	Caches       ICaches
+}
+
+func (own *IReqLimit) ClearCacheByKey(key string) {
+	delete(own.Caches, key)
 }
 
 type ILocation struct {
 	Reg          string
 	Pass         []string
 	Balance      string
-	ReqLimit     *[]IReqLimit
+	ReqLimit     *[]*IReqLimit
 	RedirectCode int
 	RedirectUrl  string
 }
@@ -76,11 +90,11 @@ type IServer struct {
 	Name     []string
 	SSLKey   string
 	SSLCert  string
-	ReqLimit *[]IReqLimit
+	ReqLimit *[]*IReqLimit
 }
 
 type IGlobal struct {
-	ReqLimit *[]IReqLimit
+	ReqLimit *[]*IReqLimit
 }
 
 // InitGlobalServices 在这里准备所有可能需要的数据
