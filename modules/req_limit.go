@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -95,7 +94,7 @@ func ReqLimitCheckerCore(reqLimit *IReqLimit, key string) bool {
 				now := time.Now()
 				duration := now.Sub(reqLimit.Caches[key].Time)
 				if duration.Milliseconds() > timeout {
-					fmt.Println("开始清理cache:", key)
+					//fmt.Println("开始清理cache:", key)
 					cache.ClearGoroutine()
 					reqLimit.ClearCacheByKey(key)
 					return
