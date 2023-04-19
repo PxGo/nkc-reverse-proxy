@@ -3,7 +3,6 @@ package modules
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -16,20 +15,18 @@ func WriteResponseContent(writer http.ResponseWriter, status int, content []byte
 	return nil
 }
 
-func WriteResponseHTML(writer http.ResponseWriter, status int) error {
-	pageContent, err := GetPageByStatus(status)
-	if err != nil {
-		return err
-	}
+func WriteResponseHTML(writer http.ResponseWriter, status int, templateContent TemplateContent) error {
+	pageContent := GetPageByTemplateContent(templateContent)
+
 	writer.Header().Set("Content-Type", "text/html")
-	err = WriteResponseContent(writer, status, pageContent)
+	err := WriteResponseContent(writer, status, pageContent)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func WriteResponseJSON(writer http.ResponseWriter, status int) error {
+func WriteResponseJSON(writer http.ResponseWriter, status int, templateContent TemplateContent) error {
 	statusText := http.StatusText(status)
 	writer.Header().Set("Content-Type", "application/json")
 	body := struct {
@@ -39,7 +36,7 @@ func WriteResponseJSON(writer http.ResponseWriter, status int) error {
 	}{
 		Code:    0,
 		Type:    statusText,
-		Message: strconv.Itoa(status) + " " + statusText,
+		Message: templateContent.Title + " " + templateContent.Desc,
 	}
 	bodyJson, err := json.Marshal(body)
 	if err != nil {
@@ -52,16 +49,16 @@ func WriteResponseJSON(writer http.ResponseWriter, status int) error {
 	return nil
 }
 
-func WriteResponse(request *http.Request, writer http.ResponseWriter, status int) error {
+func WriteResponse(request *http.Request, writer http.ResponseWriter, status int, templateContent TemplateContent) error {
 
 	isJson := strings.Contains(request.Header.Get("Accept"), "application/json")
 
 	var err error
 
 	if isJson {
-		err = WriteResponseJSON(writer, status)
+		err = WriteResponseJSON(writer, status, templateContent)
 	} else {
-		err = WriteResponseHTML(writer, status)
+		err = WriteResponseHTML(writer, status, templateContent)
 	}
 
 	if err != nil {

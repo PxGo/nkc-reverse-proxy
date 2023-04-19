@@ -1,11 +1,25 @@
 console:
   debug: false
   warning: false
-  error: false
-  info: false
+  error: true
+  info: true
 
 proxy: false
 maxIpCount: 1
+
+template:
+  page503:
+    title: "🚫 503 Service Unavailable"
+    desc: "Sorry, the server is undergoing maintenance. It will be back soon."
+  page404:
+    title: "👀 404 Not Found"
+    desc: "Oops, looks like the page you're looking for went to Mars. We're trying to get it back."
+  page429:
+    title: "🚦 429 Too Many Requests"
+    desc: "Sorry, you've made too many requests. The server's too busy to talk to you right now."
+  page500:
+    title: "🔥 500 Internal Server Error"
+    desc: "The server seems to have a minor issue. We're giving it a checkup."
 
 servers:
   -

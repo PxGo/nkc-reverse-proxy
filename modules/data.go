@@ -2,13 +2,6 @@ package modules
 
 import (
 	"errors"
-	"sync"
-	"time"
-)
-
-const (
-	ReqLimitTypeStatic IReqLimitType = "static"
-	ReqLimitTypeIp     IReqLimitType = "ip"
 )
 
 var GlobalServices IPortHostServices
@@ -18,63 +11,27 @@ type IService struct {
 	Server   IServer
 	Location ILocation
 	Global   IGlobal
+	Template Template
 }
+
+func (service *IService) GetTemplateContentByStatus(status int) TemplateContent {
+	switch status {
+	case 500:
+		return service.Template.Page500
+	case 429:
+		return service.Template.Page429
+	case 503:
+		return service.Template.Page503
+	case 404:
+		return service.Template.Page404
+	default:
+		return service.Template.Page500
+	}
+}
+
 type IHostService map[string][]IService
+
 type IPortHostServices map[uint16]IHostService
-
-type IReqLimitType string
-type IReqLimitChanData struct {
-	LockChan IReqLimitLockChan
-	Key      string
-}
-
-type ICacheChanData struct {
-	Cache    *ICache
-	ReqLimit IReqLimit
-	LockChan IReqLimitLockChan
-}
-
-type IReqLimitChan chan IReqLimitChanData
-type ICacheChan chan IReqLimitLockChan
-
-type IReqLimitLockChan chan bool
-
-type ICache struct {
-	Lock         *sync.Mutex
-	LoopLock     *sync.Mutex
-	Cond         *sync.Cond
-	Time         time.Time
-	Count        uint64
-	WaitingCount uint64
-	LockChanArr  []IReqLimitLockChan
-	MarkClear    bool
-}
-
-func (own *ICache) ClearGoroutine() {
-	own.MarkClear = true
-	own.Cond.Broadcast()
-}
-
-type ICacheCheckerCoreChanData struct {
-	Cache    *ICache
-	LockChan IReqLimitLockChan
-}
-type ICacheCheckerCoreChan chan ICacheCheckerCoreChanData
-
-type ICaches map[string]*ICache
-
-type IReqLimit struct {
-	Mu           sync.Mutex
-	Type         IReqLimitType
-	Time         uint64
-	CountPerTime uint64
-	CacheNumber  uint64
-	Caches       ICaches
-}
-
-func (own *IReqLimit) ClearCacheByKey(key string) {
-	delete(own.Caches, key)
-}
 
 type ILocation struct {
 	Reg          string
@@ -129,6 +86,29 @@ func InitGlobalServices() error {
 			ReqLimit: &serverReqLimit,
 		}
 
+		var template = Template{
+			Page404: server.Page404,
+			Page429: server.Page429,
+			Page500: server.Page500,
+			Page503: server.Page503,
+		}
+
+		if template.Page429.Title == "" {
+			template.Page429 = GlobalConfigs.Template.Page429
+		}
+
+		if template.Page404.Title == "" {
+			template.Page404 = GlobalConfigs.Template.Page404
+		}
+
+		if template.Page500.Title == "" {
+			template.Page500 = GlobalConfigs.Template.Page500
+		}
+
+		if template.Page503.Title == "" {
+			template.Page503 = GlobalConfigs.Template.Page503
+		}
+
 		if err != nil {
 			return err
 		}
@@ -145,9 +125,11 @@ func InitGlobalServices() error {
 				RedirectCode: location.RedirectCode,
 				RedirectUrl:  location.RedirectUrl,
 			}
+
 			services = append(services, IService{
 				Global:   iGlobal,
 				Server:   iServer,
+				Template: template,
 				Location: iLocation,
 			})
 		}

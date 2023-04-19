@@ -14,6 +14,19 @@ type Configs struct {
 	Console    Console  `yaml:"console"`
 	Proxy      bool     `yaml:"proxy"`
 	MaxIpCount int16    `yaml:"maxIpCount"`
+	Template   Template `yaml:"template"`
+}
+
+type TemplateContent struct {
+	Title string `yaml:"title"`
+	Desc  string `yaml:"desc"`
+}
+
+type Template struct {
+	Page404 TemplateContent `yaml:"page404"`
+	Page500 TemplateContent `yaml:"page500"`
+	Page503 TemplateContent `yaml:"page503"`
+	Page429 TemplateContent `yaml:"page429"`
 }
 
 type Console struct {
@@ -24,12 +37,16 @@ type Console struct {
 }
 
 type Server struct {
-	Listen   uint16     `yaml:"listen"`
-	Name     []string   `yaml:"name"`
-	SSLKey   string     `yaml:"ssl_key"`
-	SSLCert  string     `yaml:"ssl_cert"`
-	ReqLimit []string   `yaml:"req_limit"`
-	Location []Location `yaml:"location"`
+	Listen   uint16          `yaml:"listen"`
+	Name     []string        `yaml:"name"`
+	SSLKey   string          `yaml:"ssl_key"`
+	SSLCert  string          `yaml:"ssl_cert"`
+	ReqLimit []string        `yaml:"req_limit"`
+	Location []Location      `yaml:"location"`
+	Page404  TemplateContent `yaml:"page404"`
+	Page500  TemplateContent `yaml:"page500"`
+	Page503  TemplateContent `yaml:"page503"`
+	Page429  TemplateContent `yaml:"page429"`
 }
 
 type Location struct {

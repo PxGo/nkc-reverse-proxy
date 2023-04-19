@@ -9,7 +9,6 @@ import (
 
 func main() {
 
-	// 缓存配置文件原始数据
 	err := modules.InitGlobalConfigs()
 	if err != nil {
 		modules.AddErrorLog(err)

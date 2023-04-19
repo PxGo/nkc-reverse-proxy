@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const IpHeader = "X-Forwarded-For"
@@ -234,22 +235,22 @@ func GetReqLimitByString(reqLimit []string) ([]*IReqLimit, error) {
 		if len(reqLimitTypeArr) != 2 {
 			return nil, parameterError
 		}
+
 		countPerTimeInt, err := strconv.Atoi(reqLimitTypeArr[0])
 		if err != nil {
 			return nil, err
 		}
 		countPerTimeUint64 := uint64(countPerTimeInt)
 		var timeNumber uint64 = 0
-		switch reqLimitTypeArr[1] {
-		case "s":
-			timeNumber = 1000
-		case "m":
-			timeNumber = 60 * 1000
-		case "h":
-			timeNumber = 60 * 60 * 1000
-		case "d":
-			timeNumber = 24 * 60 * 60 * 1000
+
+		duration, err := time.ParseDuration(reqLimitTypeArr[1])
+
+		if err != nil {
+			return nil, parameterError
 		}
+
+		timeNumber = uint64(duration.Milliseconds())
+
 		reqLimit := &IReqLimit{
 			Type:         reqLimitType,
 			Time:         timeNumber,

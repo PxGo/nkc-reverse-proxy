@@ -1,45 +1,48 @@
 package modules
 
 import (
-	"io/ioutil"
-	"os"
-	"path"
-	"strconv"
+	"strings"
 )
 
-var pages map[string][]byte
+const PageTemplate = "<!doctype html>" +
+	"<html lang=\"en\">" +
+	"<head>" +
+	"<meta charset=\"UTF-8\">" +
+	"<meta name=\"viewport\" content=\"width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0\">" +
+	"<meta http-equiv=\"X-UA-Compatible\" content=\"ie=edge\">" +
+	"<title>{{title}}</title>" +
+	"<style>" +
+	"html, body{" +
+	"	padding: 0;" +
+	"	margin: 0;" +
+	"	font-size: 12px;" +
+	"}" +
+	".container{" +
+	"	box-sizing: border-box;" +
+	"	padding: 12px;" +
+	"	height: 100vh;" +
+	"	width: 100vw;" +
+	"	display: flex;" +
+	"	justify-content: center;" +
+	"	align-items: center;" +
+	"	flex-direction: column;" +
+	"}" +
+	".container p{" +
+	"	font-size: 1.25rem;" +
+	"}" +
+	"</style>" +
+	"</head>" +
+	"<body>" +
+	"<div class=\"container\">" +
+	"	<h1>{{title}}</h1>" +
+	"	<p>{{desc}}</p>" +
+	"</div>" +
+	"</body>" +
+	"</html>"
 
-func getPages() (map[string][]byte, error) {
-	if pages != nil {
-		return pages, nil
-	}
-	pages := make(map[string][]byte)
-	root, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	pagesDir := path.Join(root, "./pages")
-	files, err := ioutil.ReadDir(pagesDir)
-	for _, fileInfo := range files {
-		if fileInfo.IsDir() {
-			continue
-		}
-		filename := fileInfo.Name()
-		filePath := path.Join(pagesDir, filename)
-		fileContent, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			return nil, err
-		}
-		pages[filename] = fileContent
-	}
-	return pages, nil
-}
+func GetPageByTemplateContent(templateContent TemplateContent) []byte {
+	page := strings.Replace(PageTemplate, "{{title}}", templateContent.Title, -1)
+	page = strings.Replace(page, "{{desc}}", templateContent.Desc, -1)
 
-func GetPageByStatus(status int) ([]byte, error) {
-	pages, err := getPages()
-	if err != nil {
-		return nil, err
-	}
-	return pages[strconv.Itoa(status)+".html"], nil
-
+	return []byte(page)
 }

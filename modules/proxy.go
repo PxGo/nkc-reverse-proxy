@@ -10,8 +10,8 @@ import (
 func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 	director := func(req *http.Request) {
 		originHost := req.Host
-		host, err := GetRequestAddr(originHost)
 		originUrl := req.URL.String()
+		host, err := GetRequestAddr(originHost)
 		if err != nil {
 			AddErrorLog(err)
 			return
@@ -40,10 +40,28 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 	}
 
 	errorHandle := func(w http.ResponseWriter, r *http.Request, err error) {
-		ip, port := GetClientRealAddr(r)
 		AddErrorLog(err)
+
+		originHost := r.Host
+		host, err := GetRequestAddr(originHost)
+		if err != nil {
+			AddErrorLog(err)
+			return
+		}
+
+		originUrl := r.URL.String()
+
+		service, err := GetTargetService(host, port, originUrl)
+
+		if err != nil {
+			AddErrorLog(err)
+			return
+		}
+
+		ip, port := GetClientRealAddr(r)
+
 		AddServiceUnavailableError(ip, port, r.Method, r.URL.String())
-		err = WriteResponse(r, w, http.StatusServiceUnavailable)
+		err = WriteResponse(r, w, http.StatusServiceUnavailable, service.Template.Page503)
 		if err != nil {
 			AddErrorLog(err)
 		}
