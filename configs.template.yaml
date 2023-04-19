@@ -1,35 +1,71 @@
 console:
-  debug: false
-  warning: false
-  error: true
-  info: true
+  debug: false         # Debug messages
+  warning: false       # Warning messages
+  error: true          # Error messages
+  info: true           # Info messages
 
-proxy: false
-maxIpCount: 1
+proxy: false           # Enable proxy mode
+maxIpCount: 1          # Maximum number of IPs that can be forwarded
 
-template:
-  page503:
-    title: "🚫 503 Service Unavailable"
-    desc: "Sorry, the server is undergoing maintenance. It will be back soon."
-  page404:
-    title: "👀 404 Not Found"
-    desc: "Oops, looks like the page you're looking for went to Mars. We're trying to get it back."
-  page429:
-    title: "🚦 429 Too Many Requests"
-    desc: "Sorry, you've made too many requests. The server's too busy to talk to you right now."
-  page500:
-    title: "🔥 500 Internal Server Error"
-    desc: "The server seems to have a minor issue. We're giving it a checkup."
 
-servers:
+template:             # Custom error pages
+  page503:            # 503 error page
+    title: "🚫 503 Service Unavailable"      # Title of the error page
+    desc: "Sorry, the server is undergoing maintenance. It will be back soon."   # Description of the error page
+  page404:            # 404 error page
+    title: "👀 404 Not Found"               # Title of the error page
+    desc: "Oops, looks like the page you're looking for went to Mars. We're trying to get it back." # Description of the error page
+  page429:            # 429 error page
+    title: "🚦 429 Too Many Requests"       # Title of the error page
+    desc: "Sorry, you've made too many requests. The server's too busy to talk to you right now." # Description of the error page
+  page500:            # 500 error page
+    title: "🔥 500 Internal Server Error"  # Title of the error page
+    desc: "The server seems to have a minor issue. We're giving it a checkup."  # Description of the error page
+
+servers:               # List of servers
   -
-    listen: 80
-    name:
+    listen: 80         # Port number to listen on
+    name:              # Server names
       - localhost
       - 127.0.0.1
-    location:
+    location:          # List of locations
       -
-        reg: "^\\/"
-        pass:
+        reg: "^\\/"    # Regular expression to match the URL
+        pass:          # List of upstream servers
           - http://127.0.0.1:8080
-        balance: random
+        balance: random # Load balancing strategy
+#  -
+#    listen: 80         # Port number to listen on
+#    name:              # Server names
+#      - www.example.com
+#      - example.com
+#    location:          # List of locations
+#      -
+#        reg: '^\\/'    # Regular expression to match the URL
+#        redirect_code: 301  # HTTP status code for redirection
+#        redirect_url: 'https://www.example.com'  # Redirection URL
+#  -
+#    listen: 443        # Port number to listen on
+#    name:              # Server names
+#      - www.example.com
+#    ssl_key: "path to ssl key"  # Path to SSL private key
+#    ssl_cert: "path to ssl cert"  # Path to SSL certificate
+#    req_limit:         # Access rate limit
+#      - "2000/1m 4000 ip"
+#    location:          # List of locations
+#      -
+#        reg: "^\\/"    # Regular expression to match the URL
+#        pass:          # List of upstream servers
+#          - http://127.0.0.1:9000
+#          - http://127.0.0.1:9001
+#          - http://127.0.0.1:9002
+#          - http://127.0.0.1:9003
+#        balance: random # Load balancing strategy
+#        req_limit:     # Access rate limit
+#          - "20/1s 50 ip"
+#      -
+#        reg: "^\\/socket.io"  # Regular expression to match the URL
+#        pass:          # List of upstream servers
+#          - http://127.0.0.1:12000
+#          - http://127.0.0.1:12001
+#        balance: ip_hash # Load balancing strategy
