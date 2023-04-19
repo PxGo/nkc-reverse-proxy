@@ -1,181 +1,195 @@
-<h1 align="center" style="align-content: center">nkc-reverse-proxy</h1> 
-<h4 align="center" style="align-content: center">一个简单易用的反向代理服务</h4>
+NKC-Reverse-Proxy
+======
+NKC-Reverse-Proxy is a powerful and efficient cross-platform reverse proxy service written in Golang.
+
+[![Go Version](https://img.shields.io/badge/Go-v1.16-blue)](https://golang.org/dl/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kccd/nkc-reverse-proxy)](https://goreportcard.com/report/github.com/kccd/nkc-reverse-proxy)
+[![Downloads](https://img.shields.io/github/downloads/kccd/nkc-reverse-proxy/total)](https://github.com/kccd/nkc-reverse-proxy/releases)
+[![References](https://img.shields.io/github/forks/kccd/nkc-reverse-proxy?label=references)](https://github.com/kccd/nkc-reverse-proxy/network/members)
+[![License](https://img.shields.io/github/license/kccd/nkc-reverse-proxy)](https://github.com/kccd/nkc-reverse-proxy/blob/main/LICENSE)
 
 
-## 目录
-+ [安装](#install)
-+ [配置说明](#configs)
-  + [console](#configs_console)
-  + [proxy](#configs_proxy)
-  + [maxIpCount](#configs_proxy)
-  + [req_limit](#configs_req_limit)
-  + [servers](#configs_servers) 
-    + [HTTP 网站配置](#configs_servers_http)
-    + [HTTPS 网站配置](#configs_servers_https)
-  
-## <span id="install">安装</span>
+Usage
+-----
 
+### Installation
+
+You can install NKC-Reverse-Proxy by compiling the source code or downloading the pre-compiled binary.
+
+
+#### Compile from source code
+
+1.  `git clone https://github.com/kccd/nkc-reverse-proxy`
+2.  `cd nkc-reverse-proxy`
+3.  `go build .`
+
+#### Download pre-compiled binary
+
+Download the binary for your OS from the [releases page](https://github.com/kccd/nkc-reverse-proxy/releases).
+
+### Running
+
+To run NKC-Reverse-Proxy, use the following command in your terminal:
+
+```bash
+nkc-reverse-proxy -f /path/to/config/file
 ```
-$ git clone https://github.com/kccd/nkc-reverse-proxy.git
-$ cd nkc-reverse-proxy
-$ copy configs.template.yaml configs.yaml
+Please note that the name of the executable file may vary depending on the platform you are using. Make sure to use the correct name of the executable file for your platform when running the program.
 
-# 运行已编译版本
-# windows amd64
-./build/app-windows-amd64.exe
-# linux amd64
-./build/app-linux-amd64
+Replace /path/to/config/file with the path to your configuration file. This command will start the reverse proxy server and load the configuration file specified.
 
-# 从源码编译并运行
-$ go build .
-# windows
-$ ./nkc-reverse-proxy.exe
-# linux
-$ ./nkc-reverse-proxy
+### Configuration
 
-# 程序在启动时，会将项目根目录下的 configs.yaml 作为配置文件，你还可以手动指定配置文件所在位置，如：
-$ ./nkc-reverse-proxy /workspace/proxy/configs.yaml
-```
+#### console
+Used to control the display of console logs.
 
-## <span id="configs">配置说明</span>
-
-### <span id="configs_console">console</span>
-
-用于控制控制台日志的显示。
-
-```
+yaml
+```yaml
 console:
-  debug: false # 是否显示 debug 日志  
-  warning: false # 是否显示 warning 日志
-  error: false # 是否显示 error 日志
-  info: false # 是否显示 info 日志
+  debug: false # Whether to display debug logs
+  warning: false # Whether to display warning logs
+  error: false # Whether to display error logs
+  info: false # Whether to display info logs
 ```
 
-### <span id="configs_proxy">proxy & maxIpCount</span>
 
-当程序处于其他代理程序之后时需设置该值才能获取到客户端的真实 `IP `和 `Port`。
+#### proxy & maxIpCount
 
+When the program is behind another proxy program, this value must be set to obtain the real IP and Port of the client.
+
+yaml
+```yaml
+proxy: false # Whether to process after other proxy programs
+maxIpCount: 1 # Maximum number of allowed IPs
 ```
-proxy: false # 是否处理其他代理程序之后
-maxIpCount: 1 # 最大允许的 IP 数量
-```
-例如在 ` 代理1 -> 代理2 -> 当前程序 ` 这种情况下，想要获取客户端真实 `IP` 和 `Port`，就需要做如下配置：
-```
+
+For example, if the program is in the following scenario: Proxy1 -> Proxy2 -> Current program, to obtain the real IP and Port of the client, the following configuration needs to be done:
+
+yaml
+```yaml
 proxy: true
 maxIpCount: 2
 ```
 
-### <span id="configs_req_limit">req_limit</span>
+#### req_limit
+Access rate control.
 
-访问速率控制。
-
-```
+yaml
+```yaml
 req_limit:
-  - "50/s 100" # 每秒最多处理 50 个请求，缓存请求数不超过 100，无差别限制
-  - "5/s 10 ip" # 每秒最多处理 5 个请求，缓存请求数不超过 10，根据客户端 IP 限制
+  - "50/10s 100" # Maximum of 50 requests processed in 10 seconds, with a cache of up to 100 requests, and no discrimination
+  - "200/5m 400 ip" # Maximum of 200 requests processed in 5 minutes, with a cache of up to 400 requests, restricted by client IP
+```
+Valid time units are: `s` `m` `h` `d`.
+
+For example, if the request limit is not exceeding 500 per minute and the maximum cache number is 2000, restricted by client IP:
+
+yaml
+```yaml
+req_limit:
+  - "500/1m 2000 ip"
 ```
 
-合法的单位时间处理条数有：`num/s` `num/m` `num/h` `num/d`。
+#### servers
+Used to configure the relevant information of the reverse proxy service.
 
-例如每分钟处理请求数不超过 `500` 且最大缓存数为 `2000`，根据客户端 `IP` 限制：
-```
-req_limit: 
-  - "500/m 2000 ip"
-```
+For detailed configuration information, please refer to [configs.template.yaml](https://github.com/kccd/nkc-reverse-proxy/blob/main/configs.template.yaml)
 
-### <span id="configs_servers">servers</span>
+Examples
+-----
 
-用于配置反向代理服务的相关信息。
+#### HTTP
 
-```
+yaml
+```yaml
 servers:
   -
-    listen: 443 # 服务暴露的端口
-    name: # 允许链接的域
-      - "127.0.0.1"
-      - "localhost"
-    ssl_key: "/ssl/test.key"  # SSL 证书文件路径
-    ssl_cert: "/ssl/test.crt" # SSL 证书文件路径
-    req_limit: # 访问速率限制
-      - "50/s 500" 
-      - "10/s 100 ip"
-    location: # 根据路径匹配服务
-      -    
-        reg: "^\\/" # 请求路径正则
-        pass: # 目标服务
-          - "http://127.0.0.1:8080"
-        balance: "random" # 负载均衡类型 random, ip_hash
-        req_limit: # 访问速率限制
-          - "10/s 50"
-          - "5/s 30 ip"
-      - 
-        reg: "^\\/socket\\.io\\/"
-        pass: 
-          - "http://127.0.0.1:9090"
-        balance: "ip_hash"
-        req_limit:
-          - "50/s 100"
-          - "1/s 5 ip"    
-      -
-        reg: "^\\/old-home"
-        redirect_code: 301 # 重定向状态码
-        redirect_url: "https://127.0.0.1/home" # 重定向链接
-```
-
-以上就是 `servers` 中可能出现的配置选项，下面是一些例子。
-
-<span id="configs_servers_http">1、HTTP 网站配置</span>
-
-```
-servers:
-  - 
     listen: 80
-    name: 
-      - "www.domain.com"
-    location:
+    name:     
+      - www.example.com
+    location: 
       -
         reg: "^\\/"
-        pass: 
-          - "http://127.0.0.1:8080"
-          - "http://127.0.0.1:8081"
-          - "http://127.0.0.1:8081"
-          - "http://127.0.0.1:8082"
-        balance: "random"   
-        req_limit: 
-          - "50/s 300"
-          - "3/s 10 ip"
-```
-
-<span id="configs_servers_https">2、HTTPS 网站配置</span>
+        pass:      
+          - http://127.0.0.1:8080
+        balance: random
 
 ```
+
+#### HTTPS
+
+yaml
+```yaml
 servers:
-  - 
-    listen: 443
-    name: 
-      - "www.domain.com"
-    ssl_key: "/ssl/www.domain.com.key"
-    ssl_cert: "/ssl/www.domian.com.crt"
-    location:
-      -
-        reg: "^\\/"
-        pass: 
-          - "http://127.0.0.1:8080"
-          - "http://127.0.0.1:8081"
-          - "http://127.0.0.1:8081"
-          - "http://127.0.0.1:8082"
-        balance: "random"   
-        req_limit: 
-          - "50/s 300"
-          - "3/s 10 ip"
   -
     listen: 80
-    name: 
-      - "www.domain.com"
-      - "domain.com"        
+    name:
+      - www.example.com
+      - example.com
     location:
       -
         reg: "^\\/"
         redirect_code: 301
-        redirect_url: "https://www.domain.com"  
+        redirect_url: "https://www.example.com"
+  
+  -
+    listen: 443
+    name: 
+      - www.example.com
+    ssl_cert: "/path/to/ssl/cert"
+    ssl_key: "/path/to/ssl/key"
+    location:
+      -
+        reg: "^\\/"
+        pass:
+          - http://127.0.0.1:9000
+          - http://127.0.0.1:9001
+          - http://127.0.0.1:9002
+          - http://127.0.0.1:9003
+        balance: random
 ```
+
+#### SOCKET.IO
+
+yaml
+```yaml
+servers:
+  -
+    listen: 80
+    name:
+      - www.example.com
+      - example.com
+    location:
+      -
+        reg: "^\\/"
+        redirect_code: 301
+        redirect_url: "https://www.example.com"
+  
+  -
+    listen: 443
+    name: 
+      - www.example.com
+    ssl_cert: "/path/to/ssl/cert"
+    ssl_key: "/path/to/ssl/key" 
+    location:
+      -
+        reg: "^\\/"
+        pass:
+          - http://127.0.0.1:9000
+          - http://127.0.0.1:9001
+          - http://127.0.0.1:9002
+          - http://127.0.0.1:9003
+        balance: random
+      -
+        reg: "^\\/socket.io\\/"
+        pass:
+          - http://127.0.0.1:12000
+          - http://127.0.0.1:12001
+          - http://127.0.0.1:12002
+          - http://127.0.0.1:12003
+        balance: ip_hash
+```
+
+License
+-----
+nkc-reverse-proxy is released under the [GNU Lesser General Public License v3.0](https://github.com/kccd/nkc-reverse-proxy/blob/main/LICENSE). This license grants you the freedom to use, modify, and distribute the software as you wish, subject to certain conditions.
