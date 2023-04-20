@@ -93,7 +93,7 @@ req_limit:
 #### servers
 Used to configure the relevant information of the reverse proxy service.
 
-For detailed configuration information, please refer to [configs.template.yaml](https://github.com/kccd/nkc-reverse-proxy/blob/main/configs.template.yaml)
+For detailed configuration information, please refer to [config.yaml](https://github.com/kccd/nkc-reverse-proxy/blob/main/config.yaml)
 
 Examples
 -----
@@ -192,4 +192,4 @@ servers:
 
 License
 -----
-nkc-reverse-proxy is released under the [GNU Lesser General Public License v3.0](https://github.com/kccd/nkc-reverse-proxy/blob/main/LICENSE). This license grants you the freedom to use, modify, and distribute the software as you wish, subject to certain conditions.
+NKC-Reverse-Proxy is released under the [GNU Lesser General Public License v3.0](https://github.com/kccd/nkc-reverse-proxy/blob/main/LICENSE). This license grants you the freedom to use, modify, and distribute the software as you wish, subject to certain conditions.
