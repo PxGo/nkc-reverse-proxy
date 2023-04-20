@@ -7,6 +7,11 @@ import (
 	"strconv"
 )
 
+const (
+	HeaderKeyOriginUrl  = "X-Proxy-Origin-Url"
+	HeaderKeyOriginHost = "X-Proxy-Origin-Host"
+)
+
 func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 	director := func(req *http.Request) {
 		originHost := req.Host
@@ -34,6 +39,9 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 
 		req.Host = originHost
 
+		req.Header.Set(HeaderKeyOriginUrl, originUrl)
+		req.Header.Set(HeaderKeyOriginHost, originHost)
+
 		SetXForwardedRemotePort(req)
 
 		AddReverseProxyLog(realIp, realPort, req.Method, host+":"+strconv.Itoa(int(port))+originUrl, targetUrlString+originUrl)
@@ -42,25 +50,20 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 	errorHandle := func(w http.ResponseWriter, r *http.Request, err error) {
 		AddErrorLog(err)
 
-		originHost := r.Host
-		host, err := GetRequestAddr(originHost)
-		if err != nil {
-			AddErrorLog(err)
-			return
-		}
+		originUrl := r.Header.Get(HeaderKeyOriginUrl)
+		originHost := r.Header.Get(HeaderKeyOriginHost)
 
-		originUrl := r.URL.String()
-
-		service, err := GetTargetService(host, port, originUrl)
+		service, err := GetTargetService(originHost, port, originUrl)
 
 		if err != nil {
 			AddErrorLog(err)
 			return
 		}
 
-		ip, port := GetClientRealAddr(r)
+		ip, rPort := GetClientRealAddr(r)
 
-		AddServiceUnavailableError(ip, port, r.Method, r.URL.String())
+		AddServiceUnavailableError(ip, rPort, r.Method, r.URL.String())
+
 		err = WriteResponse(r, w, http.StatusServiceUnavailable, service.Template.Page503)
 		if err != nil {
 			AddErrorLog(err)
