@@ -10,10 +10,10 @@ maxIpCount: 1          # Maximum number of IPs that can be forwarded
 
 template:             # Custom error pages
   page503:            # 503 error page
-    title: "🚫 503 Service Unavailable"      # Title of the error page
+    title: "🚧 503 Service Unavailable"      # Title of the error page
     desc: "Sorry, the server is undergoing maintenance. It will be back soon."   # Description of the error page
   page404:            # 404 error page
-    title: "👀 404 Not Found"               # Title of the error page
+    title: "🚫 404 Not Found"               # Title of the error page
     desc: "Oops, looks like the page you're looking for went to Mars. We're trying to get it back." # Description of the error page
   page429:            # 429 error page
     title: "🚦 429 Too Many Requests"       # Title of the error page
