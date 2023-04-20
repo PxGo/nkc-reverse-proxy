@@ -53,7 +53,13 @@ func GetReverseProxy(port uint16) (*httputil.ReverseProxy, error) {
 		originUrl := r.Header.Get(HeaderKeyOriginUrl)
 		originHost := r.Header.Get(HeaderKeyOriginHost)
 
-		service, err := GetTargetService(originHost, port, originUrl)
+		host, err := GetRequestAddr(originHost)
+		if err != nil {
+			AddErrorLog(err)
+			return
+		}
+
+		service, err := GetTargetService(host, port, originUrl)
 
 		if err != nil {
 			AddErrorLog(err)
