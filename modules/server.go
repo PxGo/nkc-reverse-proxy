@@ -38,6 +38,14 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	}
 
 	service, err := GetTargetService(host, handle.Port, request.URL.String())
+	if err != nil {
+		AddErrorLog(err)
+		err := WriteResponse(request, writer, http.StatusInternalServerError, GlobalConfigs.Template.Page500)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
 
 	if service == nil {
 		// 不存在匹配的服务
