@@ -29,6 +29,10 @@ const PageTemplate = "<!doctype html>" +
 	"}" +
 	".container p{" +
 	"	font-size: 1.25rem;" +
+	"   margin-bottom: 3rem;" +
+	"}" +
+	".container a{" +
+	"	color: #000;" +
 	"}" +
 	"</style>" +
 	"</head>" +
@@ -36,6 +40,7 @@ const PageTemplate = "<!doctype html>" +
 	"<div class=\"container\">" +
 	"	<h1>{{title}}</h1>" +
 	"	<p>{{desc}}</p>" +
+	"   <a href=\"https://github.com/kccd/nkc-reverse-proxy\" target=\"_blank\">NKC-REVERSE-PROXY</a>" +
 	"</div>" +
 	"</body>" +
 	"</html>"
