@@ -1,12 +1,17 @@
 package modules
 
 import (
+	"errors"
+	"flag"
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 var GlobalConfigs *Configs
+
+var InnerConfigs *Configs
 
 type Configs struct {
 	Servers    []Server `yaml:"servers"`
@@ -67,44 +72,45 @@ func InitGlobalConfigs() error {
 	return nil
 }
 
-func GetConfigsPath() (string, string, error) {
-	filePath := "configs.yaml"
+func GetConfigsPath() (string, error) {
+	filename := "config.yaml"
 	root, err := os.Getwd()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	if len(os.Args) > 1 {
-		filePath = os.Args[1]
+
+	defaultFilePath := filepath.Join(root, filename)
+
+	var filePath string
+
+	flag.StringVar(&filePath, "f", defaultFilePath, "Path to the configuration file")
+
+	flag.Parse()
+
+	if !filepath.IsAbs(filePath) {
+		filePath = filepath.Join(root, filePath)
 	}
-	if !path.IsAbs(filePath) {
-		filePath = path.Join(root, filePath)
-	}
-	templateFilePath := path.Join(root, "configs.template.yaml")
-	return filePath, templateFilePath, nil
+
+	logger.InfoLog(fmt.Sprintf("Configuration file path is %s", filePath))
+
+	return filePath, nil
 }
 
 func GetConfigs() (*Configs, error) {
+
+	if InnerConfigs != nil {
+		return InnerConfigs, nil
+	}
 	var configs *Configs
-	configFilePath, templateConfigFilePath, err := GetConfigsPath()
+	configFilePath, err := GetConfigsPath()
 	if err != nil {
 		return nil, err
 	}
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			templateFile, err := os.ReadFile(templateConfigFilePath)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(configFilePath, templateFile, 0644)
-			if err != nil {
-				return nil, err
-			}
+			return nil, errors.New(fmt.Sprintf("Configuration file not found at %s", configFilePath))
 		} else {
-			return nil, err
-		}
-		file, err = os.ReadFile(configFilePath)
-		if err != nil {
 			return nil, err
 		}
 	}
@@ -112,5 +118,8 @@ func GetConfigs() (*Configs, error) {
 	if err != nil {
 		return nil, err
 	}
-	return configs, nil
+
+	InnerConfigs = configs
+
+	return InnerConfigs, nil
 }

@@ -19,16 +19,14 @@ const IpHeader = "X-Forwarded-For"
 const PortHeader = "X-Forwarded-Remote-Port"
 
 func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
-	configs, err := GetConfigs()
-	if err != nil {
-		return nil, err
-	}
+	configs := GlobalConfigs
 	serverPortMap := make(map[uint16]*ServerPort)
 	var tlsConfig *tls.Config
 	for _, server := range configs.Servers {
 		var tlsCFG *tls.Config
 		if server.SSLKey != "" && server.SSLCert != "" {
 			if tlsConfig == nil {
+				var err error
 				tlsConfig, err = GetTLSConfig()
 				if err != nil {
 					return nil, err
@@ -40,7 +38,7 @@ func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
 		if serverPort == nil {
 			serverPortMap[server.Listen] = &ServerPort{Port: server.Listen, TLSConfig: tlsCFG}
 		} else if serverPort.TLSConfig != tlsCFG {
-			return nil, errors.New("端口冲突：" + strconv.Itoa(int(server.Listen)))
+			return nil, errors.New("Port conflict: " + strconv.Itoa(int(server.Listen)))
 		}
 	}
 	return serverPortMap, nil
@@ -48,10 +46,7 @@ func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
 
 func GetTLSConfig() (*tls.Config, error) {
 	cfg := tls.Config{}
-	configs, err := GetConfigs()
-	if err != nil {
-		return nil, err
-	}
+	configs := GlobalConfigs
 	for _, server := range configs.Servers {
 		if server.SSLKey == "" || server.SSLCert == "" {
 			continue
@@ -88,11 +83,7 @@ func SetXForwardedRemotePort(r *http.Request) {
 }
 
 func GetClientRealAddr(r *http.Request) (string, string) {
-	configs, err := GetConfigs()
-	if err != nil {
-		AddErrorLog(err)
-		return "", ""
-	}
+	configs := GlobalConfigs
 
 	var ip string
 	var port string

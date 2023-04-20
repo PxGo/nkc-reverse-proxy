@@ -1,6 +1,6 @@
 .idea
 .vscode
-/configs.yaml
 /ssl
 /logs
 /build
+/configs
