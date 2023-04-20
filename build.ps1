@@ -33,9 +33,9 @@ $env:GOOS="windows"
 $env:GOARCH="amd64"
 go build -o $windowsAmd64Path .
 
-cp ./configs.template.yaml $linuxArm64Dir
-cp ./configs.template.yaml $linuxAmd64Dir
-cp ./configs.template.yaml $windowsAmd64Dir
-cp ./configs.template.yaml $windowsArm64Dir
+cp ./config.yaml $linuxArm64Dir
+cp ./config.yaml $linuxAmd64Dir
+cp ./config.yaml $windowsAmd64Dir
+cp ./config.yaml $windowsArm64Dir
 
 echo "Done"
