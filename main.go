@@ -42,5 +42,11 @@ func main() {
 		}(serverPort)
 	}
 	fmt.Printf("Proxy server is running at %v\n", ports)
+
+	if modules.GlobalConfigs.Console.Debug {
+		modules.InitDebugServer()
+		fmt.Printf("Debug server is running at %d\n", modules.DebugServerPort)
+	}
+
 	select {}
 }
