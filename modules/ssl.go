@@ -38,9 +38,7 @@ func GetAutoCertHostWhitelist() []string {
 	var host []string
 	configs := GlobalConfigs
 	for _, server := range configs.Servers {
-		if server.SSLAuto {
-			host = append(host, server.Name...)
-		}
+		host = append(host, server.Name...)
 	}
 	return host
 }
