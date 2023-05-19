@@ -46,6 +46,7 @@ type Server struct {
 	Name     []string        `yaml:"name"`
 	SSLKey   string          `yaml:"ssl_key"`
 	SSLCert  string          `yaml:"ssl_cert"`
+	SSLAuto  bool            `yaml:"ssl_auto"`
 	ReqLimit []string        `yaml:"req_limit"`
 	Location []Location      `yaml:"location"`
 	Page404  TemplateContent `yaml:"page404"`

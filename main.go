@@ -19,6 +19,11 @@ func main() {
 		modules.AddErrorLog(err)
 		log.Fatal(err)
 	}
+	err = modules.InitAutoCert()
+	if err != nil {
+		modules.AddErrorLog(err)
+		log.Fatal(err)
+	}
 
 	serversPort, err := modules.GetServersPortFromConfigs()
 	if err != nil {

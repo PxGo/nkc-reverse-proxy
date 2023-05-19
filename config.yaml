@@ -50,6 +50,7 @@ servers:               # List of servers
 #      - www.example.com
 #    ssl_key: "path to ssl key"  # Path to SSL private key
 #    ssl_cert: "path to ssl cert"  # Path to SSL certificate
+#    ssl_auto: true # Set this field to true to automatically retrieve Let's Encrypt certificates
 #    req_limit:         # Access rate limit
 #      - "2000/1m 4000 ip"
 #    location:          # List of locations

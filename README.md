@@ -1,6 +1,8 @@
 NKC-Reverse-Proxy
 ======
-NKC-Reverse-Proxy is a powerful and efficient cross-platform reverse proxy service written in Golang.
+NKC-Reverse-Proxy is a powerful and efficient cross-platform reverse proxy service written in Golang. 
+
+It now includes automated Let's Encrypt certificate retrieval.
 
 [![Go Version](https://img.shields.io/badge/Go-v1.16-blue)](https://golang.org/dl/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kccd/nkc-reverse-proxy)](https://goreportcard.com/report/github.com/kccd/nkc-reverse-proxy)

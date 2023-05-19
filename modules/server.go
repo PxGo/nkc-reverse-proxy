@@ -22,7 +22,6 @@ type NKCHandle struct {
 }
 
 func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-
 	ip, port := GetClientRealAddr(request)
 
 	// 获取请求的域、端口以及路径
@@ -124,13 +123,20 @@ func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg 
 	if cfg != nil {
 		isHttps = true
 	}
+
+	var targetHandle http.Handler = &NKCHandle{
+		IsHTTPS:      isHttps,
+		Port:         port,
+		ReverseProxy: reverseProxy,
+	}
+
+	if !isHttps && AutoCertIsEnabled() {
+		targetHandle = AutoCert.HTTPHandler(targetHandle)
+	}
+
 	server := http.Server{
-		Addr: portString,
-		Handler: &NKCHandle{
-			IsHTTPS:      isHttps,
-			Port:         port,
-			ReverseProxy: reverseProxy,
-		},
+		Addr:    portString,
+		Handler: targetHandle,
 	}
 	if isHttps {
 		server.TLSConfig = cfg

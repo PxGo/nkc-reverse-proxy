@@ -21,31 +21,42 @@ const PortHeader = "X-Forwarded-Remote-Port"
 func GetServersPortFromConfigs() (map[uint16]*ServerPort, error) {
 	configs := GlobalConfigs
 	serverPortMap := make(map[uint16]*ServerPort)
-	var tlsConfig *tls.Config
+
+	TLSConfig, err := GetTLSConfig(false)
+	if err != nil {
+		return nil, err
+	}
+	autoTLSConfig, err := GetTLSConfig(true)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, server := range configs.Servers {
 		var tlsCFG *tls.Config
-		if server.SSLKey != "" && server.SSLCert != "" {
-			if tlsConfig == nil {
-				var err error
-				tlsConfig, err = GetTLSConfig()
-				if err != nil {
-					return nil, err
-				}
-			}
-			tlsCFG = tlsConfig
+
+		if server.SSLAuto {
+			tlsCFG = autoTLSConfig
+		} else if server.SSLKey != "" && server.SSLCert != "" {
+			tlsCFG = TLSConfig
 		}
-		serverPort := serverPortMap[server.Listen]
-		if serverPort == nil {
+
+		if serverPortMap[server.Listen] == nil {
 			serverPortMap[server.Listen] = &ServerPort{Port: server.Listen, TLSConfig: tlsCFG}
-		} else if serverPort.TLSConfig != tlsCFG {
-			return nil, errors.New("Port conflict: " + strconv.Itoa(int(server.Listen)))
+		} else if server.SSLAuto {
+			serverPortMap[server.Listen].TLSConfig = tlsCFG
 		}
 	}
 	return serverPortMap, nil
 }
 
-func GetTLSConfig() (*tls.Config, error) {
-	cfg := tls.Config{}
+func GetTLSConfig(isAutoCert bool) (*tls.Config, error) {
+	var cfg *tls.Config
+
+	if isAutoCert {
+		cfg = AutoCert.TLSConfig()
+	} else {
+		cfg = &tls.Config{}
+	}
 	configs := GlobalConfigs
 	for _, server := range configs.Servers {
 		if server.SSLKey == "" || server.SSLCert == "" {
@@ -57,7 +68,7 @@ func GetTLSConfig() (*tls.Config, error) {
 		}
 		cfg.Certificates = append(cfg.Certificates, cert)
 	}
-	return &cfg, nil
+	return cfg, nil
 }
 
 func GetClientRemoteAddr(r *http.Request) (string, string) {
