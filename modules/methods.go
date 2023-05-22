@@ -56,18 +56,19 @@ func GetTLSConfig(isAutoCert bool) (*tls.Config, error) {
 		cfg = AutoCert.TLSConfig()
 	} else {
 		cfg = &tls.Config{}
-	}
-	configs := GlobalConfigs
-	for _, server := range configs.Servers {
-		if server.SSLKey == "" || server.SSLCert == "" {
-			continue
+		configs := GlobalConfigs
+		for _, server := range configs.Servers {
+			if server.SSLKey == "" || server.SSLCert == "" {
+				continue
+			}
+			cert, err := tls.LoadX509KeyPair(server.SSLCert, server.SSLKey)
+			if err != nil {
+				return nil, err
+			}
+			cfg.Certificates = append(cfg.Certificates, cert)
 		}
-		cert, err := tls.LoadX509KeyPair(server.SSLCert, server.SSLKey)
-		if err != nil {
-			return nil, err
-		}
-		cfg.Certificates = append(cfg.Certificates, cert)
 	}
+
 	return cfg, nil
 }
 
