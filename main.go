@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	_ "net/http/pprof"
+	"nkc-reverse-proxy/conf"
 	"nkc-reverse-proxy/modules"
 	"os"
 	"time"
@@ -41,7 +42,7 @@ func main() {
 			}
 		}(serverPort)
 	}
-	fmt.Printf("NRP[%v] is running at %v\n", modules.CodeVersion, ports)
+	fmt.Printf("NRP[%v] is running at %v\n", conf.CodeVersion, ports)
 
 	if modules.GlobalConfigs.Console.Debug {
 		modules.InitDebugServer()

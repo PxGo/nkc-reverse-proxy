@@ -6,7 +6,7 @@ param(
 if ($version -eq "") {
     Write-Host "Version number is not specified and will be read from the version.txt"
     # Read the version number from the version.txt file in the project root directory
-    $versionFilePath = Join-Path $PSScriptRoot "version.txt"
+    $versionFilePath = Join-Path $PSScriptRoot "conf/version.txt"
     if (Test-Path $versionFilePath) {
         $version = Get-Content $versionFilePath -Raw
         Write-Host "The version number is: $version"
