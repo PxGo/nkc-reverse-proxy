@@ -1,34 +1,49 @@
-$version = $args[0]
+param(
+    [string]$version = ""
+)
 
-$dir = "./build/v$version"
+# Check if version number is specified
+if ($version -eq "") {
+    Write-Host "Version number is not specified and will be read from the version.txt"
+    # Read the version number from the version.txt file in the project root directory
+    $versionFilePath = Join-Path $PSScriptRoot "version.txt"
+    if (Test-Path $versionFilePath) {
+        $version = Get-Content $versionFilePath -Raw
+        Write-Host "The version number is: $version"
+    } else {
+        Write-Host "Cannot find the version.txt file, please specify the version number parameter."
+        return
+    }
+}
 
-$linuxArm64Dir = $dir + "/nkc-reverse-proxy-linux-arm64-v" + $version
-$linuxAmd64Dir = $dir + "/nkc-reverse-proxy-linux-amd64-v" + $version
-$windowsArm64Dir = $dir + "/nkc-reverse-proxy-windows-arm64-v" + $version
-$windowsAmd64Dir = $dir + "/nkc-reverse-proxy-windows-amd64-v" + $version
+$dir = "./build/$version"
 
+$linuxArm64Dir = $dir + "/nrp-linux-arm64-" + $version
+$linuxAmd64Dir = $dir + "/nrp-linux-amd64-" + $version
+$windowsArm64Dir = $dir + "/nrp-windows-arm64-" + $version
+$windowsAmd64Dir = $dir + "/nrp-windows-amd64-" + $version
 
-$linuxArm64Path = $linuxArm64Dir + "/nkc-reverse-proxy"
-$linuxAmd64Path = $linuxAmd64Dir + "/nkc-reverse-proxy"
-$windowsArm64Path = $windowsArm64Dir + "/nkc-reverse-proxy.exe"
-$windowsAmd64Path = $windowsAmd64Dir + "/nkc-reverse-proxy.exe"
+$linuxArm64Path = $linuxArm64Dir + "/nrp-linux-arm64-" + $version
+$linuxAmd64Path = $linuxAmd64Dir + "/nrp-linux-amd64-" + $version
+$windowsArm64Path = $windowsArm64Dir + "/nrp-windows-arm64-" + $version + ".exe"
+$windowsAmd64Path = $windowsAmd64Dir + "/nrp-windows-amd64-" + $version + ".exe"
 
-echo $linuxArm64Path
+Write-Host $linuxArm64Path
 $env:GOOS="linux"
 $env:GOARCH="arm64"
 go build -o $linuxArm64Path .
 
-echo $linuxAmd64Path
+Write-Host $linuxAmd64Path
 $env:GOOS="linux"
 $env:GOARCH="amd64"
 go build -o $linuxAmd64Path .
 
-echo $windowsArm64Path
+Write-Host $windowsArm64Path
 $env:GOOS="windows"
 $env:GOARCH="arm64"
 go build -o $windowsArm64Path .
 
-echo $windowsAmd64Path
+Write-Host $windowsAmd64Path
 $env:GOOS="windows"
 $env:GOARCH="amd64"
 go build -o $windowsAmd64Path .
@@ -38,4 +53,4 @@ cp ./config.yaml $linuxAmd64Dir
 cp ./config.yaml $windowsAmd64Dir
 cp ./config.yaml $windowsArm64Dir
 
-echo "Done"
+Write-Host "Done"
