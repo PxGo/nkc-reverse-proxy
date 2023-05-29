@@ -1,6 +1,7 @@
 package modules
 
 import (
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"

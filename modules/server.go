@@ -3,7 +3,6 @@ package modules
 import (
 	"crypto/tls"
 	"errors"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -142,14 +141,12 @@ func CreateServerAndStart(reverseProxy *httputil.ReverseProxy, port uint16, cfg 
 		server.TLSConfig = cfg
 		err := server.ListenAndServeTLS("", "")
 		if err != nil {
-			AddErrorLog(err)
-			log.Fatal(err)
+			return nil, err
 		}
 	} else {
 		err := server.ListenAndServe()
 		if err != nil {
-			AddErrorLog(err)
-			log.Fatal(err)
+			return nil, err
 		}
 	}
 	return &server, nil
