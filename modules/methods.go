@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -264,4 +265,29 @@ func GetReqLimitByString(reqLimit []string) ([]*IReqLimit, error) {
 		reqLimitArr = append(reqLimitArr, reqLimit)
 	}
 	return reqLimitArr, nil
+}
+
+func GetAbsPath(path string) (string, error) {
+	if !filepath.IsAbs(path) {
+		root, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		path = filepath.Join(root, path)
+	}
+	return path, nil
+}
+
+func IsDirValid(dirPath string) bool {
+	fileInfo, err := os.Stat(dirPath)
+
+	if err != nil {
+		return false
+	}
+
+	if !fileInfo.IsDir() {
+		return false
+	}
+
+	return true
 }

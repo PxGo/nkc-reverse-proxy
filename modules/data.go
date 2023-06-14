@@ -2,6 +2,7 @@ package modules
 
 import (
 	"errors"
+	"net/http"
 )
 
 var GlobalServices IPortHostServices
@@ -40,6 +41,7 @@ type ILocation struct {
 	ReqLimit     *[]*IReqLimit
 	RedirectCode int
 	RedirectUrl  string
+	RootHandler  http.Handler
 }
 
 type IServer struct {
@@ -117,6 +119,23 @@ func InitGlobalServices() error {
 			if err != nil {
 				return err
 			}
+
+			var RootHandler http.Handler
+
+			if location.Root != "" {
+				targetPath, err := GetAbsPath(location.Root)
+				if err != nil {
+					return err
+				}
+				if !IsDirValid(targetPath) {
+					return errors.New("Invalid directory: " + location.Root)
+				}
+				RootHandler = http.FileServer(http.Dir(targetPath))
+				if location.RootPrefix != "" {
+					RootHandler = http.StripPrefix(location.RootPrefix, RootHandler)
+				}
+			}
+
 			iLocation := ILocation{
 				Reg:          location.Reg,
 				Pass:         location.Pass,
@@ -124,6 +143,7 @@ func InitGlobalServices() error {
 				ReqLimit:     &locationReqLimit,
 				RedirectCode: location.RedirectCode,
 				RedirectUrl:  location.RedirectUrl,
+				RootHandler:  RootHandler,
 			}
 
 			services = append(services, IService{

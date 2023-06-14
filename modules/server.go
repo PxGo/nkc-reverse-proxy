@@ -73,6 +73,13 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	// 静态服务
+	if service.Location.RootHandler != nil {
+		service.Location.RootHandler.ServeHTTP(writer, request)
+		AddFileServerLog(ip, port, request.Method, service.Location.RedirectCode, request.Host+request.URL.String())
+		return
+	}
+
 	if service.Location.Pass == nil || len(service.Location.Pass) == 0 {
 		// 目标服务为空
 		AddServiceUnavailableError(ip, port, request.Method, request.Host+request.URL.String())

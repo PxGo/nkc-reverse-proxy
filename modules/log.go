@@ -202,6 +202,11 @@ func AddRedirectLog(ip string, port string, method string, code int, url string,
 	AddInfoLog(content)
 }
 
+func AddFileServerLog(ip string, port string, method string, code int, url string) {
+	content := fmt.Sprintf("[%s:%s] FileServer %s %s %s", ip, port, method, string(rune(code)), url)
+	AddInfoLog(content)
+}
+
 func AddReverseProxyLog(ip string, port string, method string, url string, targetUrl string) {
 	content := fmt.Sprintf("[%s:%s] ReverseProxy %s %s >>> %s", ip, port, method, url, targetUrl)
 	AddInfoLog(content)

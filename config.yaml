@@ -41,17 +41,21 @@ servers:               # List of servers
 #      - example.com
 #    location:          # List of locations
 #      -
-#        reg: '^\\/'    # Regular expression to match the URL
+#        reg: "^\\/"    # Regular expression to match the URL
 #        redirect_code: 301  # HTTP status code for redirection
 #        redirect_url: 'https://www.example.com'  # Redirection URL
+#      -
+#        reg: "^\\/statics\\/"            # Regular expression to match the URL
+#        rootPrefix: "/statics/"       # Prefix to remove from the URL before looking up files on disk
+#        root: "/path/to/statics/"    # Root directory for serving files on disk
 #  -
 #    listen: 443        # Port number to listen on
 #    name:              # Server names
 #      - www.example.com
-#    ssl_key: "path to ssl key"  # Path to SSL private key
-#    ssl_cert: "path to ssl cert"  # Path to SSL certificate
-#    ssl_auto: true # Set this field to true to automatically retrieve Let's Encrypt certificates
-#    req_limit:         # Access rate limit
+#    ssl_key: "path to ssl key"        # Path to SSL private key
+#    ssl_cert: "path to ssl cert"      # Path to SSL certificate
+#    ssl_auto: true                    # Set this field to true to automatically retrieve Let's Encrypt certificates
+#    req_limit:                        # Access rate limit
 #      - "2000/1m 4000 ip"
 #    location:          # List of locations
 #      -
@@ -62,11 +66,11 @@ servers:               # List of servers
 #          - http://127.0.0.1:9002
 #          - http://127.0.0.1:9003
 #        balance: random # Load balancing strategy
-#        req_limit:     # Access rate limit
+#        req_limit:      # Access rate limit
 #          - "20/1s 50 ip"
 #      -
 #        reg: "^\\/socket.io"  # Regular expression to match the URL
-#        pass:          # List of upstream servers
+#        pass:                 # List of upstream servers
 #          - http://127.0.0.1:12000
 #          - http://127.0.0.1:12001
-#        balance: ip_hash # Load balancing strategy
+#        balance: ip_hash      # Load balancing strategy

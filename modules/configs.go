@@ -63,6 +63,8 @@ type Location struct {
 	ReqLimit     []string `yaml:"req_limit"`
 	RedirectCode int      `yaml:"redirect_code"`
 	RedirectUrl  string   `yaml:"redirect_url"`
+	Root         string   `yaml:"root"`
+	RootPrefix   string   `yaml:"rootPrefix"`
 }
 
 func InitGlobalConfigs() error {
