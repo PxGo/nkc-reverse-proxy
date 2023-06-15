@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"nkc-reverse-proxy/conf"
 	"os"
 	"path/filepath"
 )
@@ -86,10 +87,25 @@ func GetConfigsPath() (string, error) {
 	defaultFilePath := filepath.Join(root, filename)
 
 	var filePath string
+	var help bool
+	var version bool
 
 	flag.StringVar(&filePath, "f", defaultFilePath, "Path to the configuration file")
+	flag.BoolVar(&help, "h", false, "show help information")
+	flag.BoolVar(&version, "v", false, "show version")
 
 	flag.Parse()
+
+	if help {
+		fmt.Println("Usage: NRP [options]")
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
+	if version {
+		fmt.Println(fmt.Sprintf("NRP %s", conf.CodeVersion))
+		os.Exit(0)
+	}
 
 	if !filepath.IsAbs(filePath) {
 		filePath = filepath.Join(root, filePath)
