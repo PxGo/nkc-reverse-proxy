@@ -226,3 +226,8 @@ func AddReqLimitInfo(ip string, port string, method string, url string, reqLimit
 	content := fmt.Sprintf("[%s:%s] TooManyRequest %s %s %s", ip, port, reqLimitType, method, url)
 	AddInfoLog(content)
 }
+
+func AddIpLimitInfo(ip string, port string, method string, url string) {
+	content := fmt.Sprintf("[%s:%s] Banned IP %s %s", ip, port, method, url)
+	AddInfoLog(content)
+}

@@ -21,6 +21,9 @@ template:             # Custom error pages
   page500:            # 500 error page
     title: "🔥 500 Internal Server Error"  # Title of the error page
     desc: "The server seems to have a minor issue. We're giving it a checkup."  # Description of the error page
+  page403:
+    title: "🚫 403 Forbidden"  # Title of the error page
+    desc: "Your IP address has been blocked."  # Description of the error page
 
 servers:               # List of servers
   -

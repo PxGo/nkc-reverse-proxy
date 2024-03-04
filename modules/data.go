@@ -6,7 +6,6 @@ import (
 )
 
 var GlobalServices IPortHostServices
-var GlobalReqLimit []*IReqLimit
 
 type IService struct {
 	Server   IServer
@@ -25,6 +24,8 @@ func (service *IService) GetTemplateContentByStatus(status int) TemplateContent 
 		return service.Template.Page503
 	case 404:
 		return service.Template.Page404
+	case 403:
+		return service.Template.Page403
 	default:
 		return service.Template.Page500
 	}
@@ -39,6 +40,7 @@ type ILocation struct {
 	Pass         []string
 	Balance      string
 	ReqLimit     *[]*IReqLimit
+	IpLimit      *[]*IIpLimit
 	RedirectCode int
 	RedirectUrl  string
 	RootHandler  http.Handler
@@ -50,10 +52,12 @@ type IServer struct {
 	SSLKey   string
 	SSLCert  string
 	ReqLimit *[]*IReqLimit
+	IpLimit  *[]*IIpLimit
 }
 
 type IGlobal struct {
 	ReqLimit *[]*IReqLimit
+	IpLimit  *[]*IIpLimit
 }
 
 // InitGlobalServices 在这里准备所有可能需要的数据
@@ -65,16 +69,19 @@ func InitGlobalServices() error {
 	if GlobalServices == nil {
 		GlobalServices = make(IPortHostServices)
 	}
-	var err error
-	GlobalReqLimit, err = GetReqLimitByString(GlobalConfigs.ReqLimit)
-
-	iGlobal := IGlobal{
-		ReqLimit: &GlobalReqLimit,
-	}
-
+	GlobalReqLimit, err := GetReqLimitByString(GlobalConfigs.ReqLimit)
 	if err != nil {
 		return err
 	}
+	GlobalIpLimit, err := GetIpLimitByString(GlobalConfigs.IpLimit)
+	if err != nil {
+		return err
+	}
+	iGlobal := IGlobal{
+		ReqLimit: &GlobalReqLimit,
+		IpLimit:  &GlobalIpLimit,
+	}
+
 	for _, server := range GlobalConfigs.Servers {
 
 		var services []IService
@@ -83,9 +90,17 @@ func InitGlobalServices() error {
 			GlobalServices[server.Listen] = make(IHostService)
 		}
 		serverReqLimit, err := GetReqLimitByString(server.ReqLimit)
+		if err != nil {
+			return err
+		}
+		serverIpLimit, err := GetIpLimitByString(server.IpLimit)
+		if err != nil {
+			return err
+		}
 
 		iServer := IServer{
 			ReqLimit: &serverReqLimit,
+			IpLimit:  &serverIpLimit,
 		}
 
 		var template = Template{
@@ -93,6 +108,7 @@ func InitGlobalServices() error {
 			Page429: server.Page429,
 			Page500: server.Page500,
 			Page503: server.Page503,
+			Page403: server.Page403,
 		}
 
 		if template.Page429.Title == "" {
@@ -111,11 +127,12 @@ func InitGlobalServices() error {
 			template.Page503 = GlobalConfigs.Template.Page503
 		}
 
-		if err != nil {
-			return err
-		}
 		for _, location := range server.Location {
 			locationReqLimit, err := GetReqLimitByString(location.ReqLimit)
+			if err != nil {
+				return err
+			}
+			locationIpLimit, err := GetIpLimitByString(location.IpLimit)
 			if err != nil {
 				return err
 			}
@@ -141,6 +158,7 @@ func InitGlobalServices() error {
 				Pass:         location.Pass,
 				Balance:      location.Balance,
 				ReqLimit:     &locationReqLimit,
+				IpLimit:      &locationIpLimit,
 				RedirectCode: location.RedirectCode,
 				RedirectUrl:  location.RedirectUrl,
 				RootHandler:  RootHandler,

@@ -90,6 +90,16 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	ipLimit := IpLimitChecker(service.Global.IpLimit, ip)
+	if ipLimit {
+		AddIpLimitInfo(ip, port, request.Method, request.URL.String())
+		err := WriteResponse(request, writer, http.StatusForbidden, service.Template.Page403)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
 	limited := ReqLimitChecker(service.Global.ReqLimit, ip)
 	if limited {
 		AddReqLimitInfo(ip, port, request.Method, request.URL.String(), "Global")
@@ -100,10 +110,30 @@ func (handle NKCHandle) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	ipLimit = IpLimitChecker(service.Server.IpLimit, ip)
+	if ipLimit {
+		AddIpLimitInfo(ip, port, request.Method, request.URL.String())
+		err := WriteResponse(request, writer, http.StatusForbidden, service.Template.Page403)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
 	limited = ReqLimitChecker(service.Server.ReqLimit, ip)
 	if limited {
 		AddReqLimitInfo(ip, port, request.Method, request.URL.String(), "Server")
 		err := WriteResponse(request, writer, http.StatusTooManyRequests, service.Template.Page429)
+		if err != nil {
+			AddErrorLog(err)
+		}
+		return
+	}
+
+	ipLimit = IpLimitChecker(service.Location.IpLimit, ip)
+	if ipLimit {
+		AddIpLimitInfo(ip, port, request.Method, request.URL.String())
+		err := WriteResponse(request, writer, http.StatusForbidden, service.Template.Page403)
 		if err != nil {
 			AddErrorLog(err)
 		}

@@ -267,6 +267,35 @@ func GetReqLimitByString(reqLimit []string) ([]*IReqLimit, error) {
 	return reqLimitArr, nil
 }
 
+func GetIpLimitByString(ipLimit []string) ([]*IIpLimit, error) {
+	var ipLimitArr []*IIpLimit
+	for _, item := range ipLimit {
+		parameterError := errors.New("ip_limit parameter error. ip_limit=" + item)
+		args := strings.Split(item, " ")
+		argsLength := len(args)
+		if argsLength < 2 || argsLength > 3 {
+			return nil, parameterError
+		}
+		bandTime, err := time.ParseDuration(args[1])
+		if err != nil {
+			return nil, parameterError
+		}
+		bandTimeUint64 := uint64(bandTime.Milliseconds())
+		countPerTime, unitTime, err := GetUnitTimeAndCountPerTimeByString(args[0])
+		if err != nil {
+			return nil, err
+		}
+		ipLimit := &IIpLimit{
+			UnitTime:         unitTime,
+			CountPerUnitTime: countPerTime,
+			BanTime:          bandTimeUint64,
+			Caches:           make(IIpLimitCaches),
+		}
+		ipLimitArr = append(ipLimitArr, ipLimit)
+	}
+	return ipLimitArr, nil
+}
+
 func GetAbsPath(path string) (string, error) {
 	if !filepath.IsAbs(path) {
 		root, err := os.Getwd()
@@ -290,4 +319,23 @@ func IsDirValid(dirPath string) bool {
 	}
 
 	return true
+}
+
+func GetUnitTimeAndCountPerTimeByString(str string) (uint64, uint64, error) {
+	arr := strings.Split(str, "/")
+	if len(arr) != 2 {
+		return 0, 0, errors.New("Count per time parameter error. count_per_time=" + str)
+	}
+	countPerTime, err := strconv.Atoi(arr[0])
+	countPerTimeUint64 := uint64(countPerTime)
+	if err != nil {
+		return 0, 0, err
+	}
+	duration, err := time.ParseDuration(arr[1])
+	if err != nil {
+		return 0, 0, err
+	}
+	unitTime := uint64(duration.Milliseconds())
+
+	return countPerTimeUint64, unitTime, nil
 }

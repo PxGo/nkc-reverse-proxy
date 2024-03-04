@@ -18,6 +18,7 @@ var InnerConfigs *Configs
 type Configs struct {
 	Servers    []Server `yaml:"servers"`
 	ReqLimit   []string `yaml:"req_limit"`
+	IpLimit    []string `yaml:"ip_limit"`
 	Console    Console  `yaml:"console"`
 	Proxy      bool     `yaml:"proxy"`
 	MaxIpCount int16    `yaml:"maxIpCount"`
@@ -34,6 +35,7 @@ type Template struct {
 	Page500 TemplateContent `yaml:"page500"`
 	Page503 TemplateContent `yaml:"page503"`
 	Page429 TemplateContent `yaml:"page429"`
+	Page403 TemplateContent `yaml:"page403"`
 }
 
 type Console struct {
@@ -50,11 +52,13 @@ type Server struct {
 	SSLCert  string          `yaml:"ssl_cert"`
 	SSLAuto  bool            `yaml:"ssl_auto"`
 	ReqLimit []string        `yaml:"req_limit"`
+	IpLimit  []string        `yaml:"ip_limit"`
 	Location []Location      `yaml:"location"`
 	Page404  TemplateContent `yaml:"page404"`
 	Page500  TemplateContent `yaml:"page500"`
 	Page503  TemplateContent `yaml:"page503"`
 	Page429  TemplateContent `yaml:"page429"`
+	Page403  TemplateContent `yaml:"page403"`
 }
 
 type Location struct {
@@ -62,6 +66,7 @@ type Location struct {
 	Pass         []string `yaml:"pass"`
 	Balance      string   `yaml:"balance"`
 	ReqLimit     []string `yaml:"req_limit"`
+	IpLimit      []string `yaml:"ip_limit"`
 	RedirectCode int      `yaml:"redirect_code"`
 	RedirectUrl  string   `yaml:"redirect_url"`
 	Root         string   `yaml:"root"`
